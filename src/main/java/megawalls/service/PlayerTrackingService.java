@@ -74,6 +74,23 @@ final class PlayerTrackingService {
         String profileName,
         String renderedName
     ) {
+        return queryPlayerState(playerId, profileName, renderedName, false);
+    }
+
+    PlayerStateView queryNametagPlayerState(
+        UUID playerId,
+        String profileName,
+        String renderedName
+    ) {
+        return queryPlayerState(playerId, profileName, renderedName, true);
+    }
+
+    private PlayerStateView queryPlayerState(
+        UUID playerId,
+        String profileName,
+        String renderedName,
+        boolean nametagView
+    ) {
         MegaWallsConfig config = MegaWallsMod.getConfig();
         TrackedPlayerState trackedPlayerState =
             trackedPlayerRegistry.resolveTrackedState(
@@ -112,26 +129,36 @@ final class PlayerTrackingService {
             playerId,
             profileName,
             config.phoenixDetectorEnabled &&
-                canUsePhoenix(config) &&
-                config.phoenixInTablist &&
-                config.isPhoenixTablistDisplayEnabled() &&
+                isPhoenixVisible(config, nametagView) &&
                 phoenixTracked,
             phoenixState == null || phoenixState.resurrectionAvailable,
                 config.diamondDetectorEnabled &&
+                !nametagView &&
                 canUseDiamond(config) &&
                 config.isDiamondTablistDisplayEnabled()
                 ? buildDiamondGear(trackedPlayerState)
                 : Collections.<DiamondGear>emptyList(),
             config.potionDetectorEnabled &&
                 canUsePotion(config) &&
-                config.potionInTablist &&
-                config.isPotionTablistDisplayEnabled()
+                isPotionVisible(config, nametagView)
                 ? trackedPlayerState.getDisplayedPotionCount()
                 : -1,
             config.strengthDetectorEnabled &&
                 canUseStrength(config) &&
-                trackedPlayerState.isStrengthActive()
+            trackedPlayerState.isStrengthActive()
         );
+    }
+
+    private boolean isPhoenixVisible(MegaWallsConfig config, boolean nametagView) {
+        return nametagView
+            ? config.phoenixInNametags
+            : config.phoenixInTablist && config.isPhoenixTablistDisplayEnabled();
+    }
+
+    private boolean isPotionVisible(MegaWallsConfig config, boolean nametagView) {
+        return nametagView
+            ? config.potionInNametags
+            : config.potionInTablist && config.isPotionTablistDisplayEnabled();
     }
 
     void onClientTick(Minecraft minecraft) {
@@ -1249,13 +1276,6 @@ final class PlayerTrackingService {
         trackedPlayerState.healingPotionHoldGraceUntil = 0L;
     }
 
-    private boolean canUsePhoenix(MegaWallsConfig config) {
-        return (
-            config != null &&
-            config.canUsePhoenix(contextService.isDeathmatchActive())
-        );
-    }
-
     private boolean canUseDiamond(MegaWallsConfig config) {
         return (
             config != null &&
@@ -1343,7 +1363,6 @@ final class PlayerTrackingService {
         if (
             config == null ||
             !config.phoenixDetectorEnabled ||
-            !canUsePhoenix(config) ||
             trackedPlayerState == null ||
             !trackedPlayerState.isPhoenixTracked() ||
             player == null ||

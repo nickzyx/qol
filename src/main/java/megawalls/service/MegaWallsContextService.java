@@ -22,6 +22,7 @@ final class MegaWallsContextService {
     private boolean inMegaWalls;
     private boolean trackingActive;
     private boolean deathmatchActive;
+    private char localTeamColor;
 
     boolean syncWorld(WorldClient world) {
         if (world == trackedWorld) {
@@ -32,6 +33,7 @@ final class MegaWallsContextService {
         inMegaWalls = false;
         trackingActive = false;
         deathmatchActive = false;
+        localTeamColor = '\0';
         return true;
     }
 
@@ -40,13 +42,15 @@ final class MegaWallsContextService {
             inMegaWalls = false;
             trackingActive = false;
             deathmatchActive = false;
+            localTeamColor = '\0';
             return;
         }
 
         Scoreboard scoreboard = world.getScoreboard();
         List<String> sidebarLines = getSidebarLines(scoreboard);
         ScoreObjective sidebarObjective = scoreboard == null ? null : scoreboard.getObjectiveInDisplaySlot(1);
-        String sidebarTitle = sidebarObjective == null ? "" : classResolver.stripFormatting(sidebarObjective.getDisplayName());
+        String formattedSidebarTitle = sidebarObjective == null ? "" : sidebarObjective.getDisplayName();
+        String sidebarTitle = classResolver.stripFormatting(formattedSidebarTitle);
 
         StringBuilder haystack = new StringBuilder(sidebarTitle);
         for (String sidebarLine : sidebarLines) {
@@ -64,12 +68,14 @@ final class MegaWallsContextService {
             inMegaWalls = false;
             trackingActive = false;
             deathmatchActive = false;
+            localTeamColor = '\0';
             return;
         }
 
         inMegaWalls = gameSidebar || localClass != null;
         if (gameSidebar) {
             trackingActive = true;
+            localTeamColor = getLastColorCode(formattedSidebarTitle);
         }
     }
 
@@ -83,6 +89,10 @@ final class MegaWallsContextService {
 
     boolean isTrackingActive() {
         return trackingActive;
+    }
+
+    char getLocalTeamColor() {
+        return localTeamColor;
     }
 
     void observeChatMessage(String message, MegaWallsClassResolver classResolver) {
@@ -127,5 +137,26 @@ final class MegaWallsContextService {
             lines.add(ScorePlayerTeam.formatPlayerName(team, score.getPlayerName()));
         }
         return lines;
+    }
+
+    private char getLastColorCode(String value) {
+        if (value == null || value.isEmpty()) {
+            return '\0';
+        }
+
+        for (int index = value.length() - 2; index >= 0; index--) {
+            if (value.charAt(index) != '\u00a7') {
+                continue;
+            }
+
+            char colorCode = Character.toLowerCase(value.charAt(index + 1));
+            if (
+                (colorCode >= '0' && colorCode <= '9') ||
+                (colorCode >= 'a' && colorCode <= 'f')
+            ) {
+                return colorCode;
+            }
+        }
+        return '\0';
     }
 }

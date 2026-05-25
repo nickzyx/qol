@@ -33,6 +33,8 @@ public final class MegaWallsService {
             );
     private final MobilityAlertService mobilityAlertService =
             new MobilityAlertService(classResolver, contextService);
+    private final NametagIconService nametagIconService =
+            new NametagIconService(classResolver, contextService);
     private final PacketObservationService packetObservationService = new PacketObservationService(playerTrackingService);
     private final EnergyReportService energyReportService = new EnergyReportService(classResolver);
 
@@ -43,8 +45,7 @@ public final class MegaWallsService {
         if (
                 !contextService.isInMegaWalls() ||
                 !contextService.isTrackingActive() ||
-                config == null ||
-                !config.canUseEnergy(contextService.isDeathmatchActive())
+                config == null
         ) {
             return;
         }
@@ -72,6 +73,14 @@ public final class MegaWallsService {
         return playerTrackingService.queryPlayerState(playerId, profileName, renderedName);
     }
 
+    PlayerStateView queryNametagPlayerState(UUID playerId, String profileName, String renderedName) {
+        if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
+            return inactivePlayerState(playerId, profileName);
+        }
+
+        return playerTrackingService.queryNametagPlayerState(playerId, profileName, renderedName);
+    }
+
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) {
@@ -83,6 +92,7 @@ public final class MegaWallsService {
         if (contextService.syncWorld(world)) {
             playerTrackingService.clear();
             mobilityAlertService.reset();
+            nametagIconService.reset(minecraft);
         }
 
         if (minecraft == null || minecraft.thePlayer == null || world == null) {
@@ -94,16 +104,19 @@ public final class MegaWallsService {
         if (!contextService.isInMegaWalls()) {
             playerTrackingService.resetSnapshots();
             mobilityAlertService.reset();
+            nametagIconService.reset(minecraft);
             return;
         }
 
         if (!contextService.isTrackingActive()) {
             playerTrackingService.resetSnapshots();
             mobilityAlertService.reset();
+            nametagIconService.reset(minecraft);
             return;
         }
 
         playerTrackingService.onClientTick(minecraft);
+        nametagIconService.handleClientTick(minecraft);
         MegaWallsConfig config = MegaWallsMod.getConfig();
         if (
                 config == null ||

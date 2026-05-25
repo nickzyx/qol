@@ -66,7 +66,7 @@ final class MobilityAlertService {
                 continue;
             }
 
-            if (hasSameTeamColor(minecraft.thePlayer, otherPlayer)) {
+            if (hasLocalTeamColor(otherPlayer)) {
                 continue;
             }
 
@@ -196,29 +196,31 @@ final class MobilityAlertService {
         return Integer.toString(yDifference);
     }
 
-    private boolean hasSameTeamColor(EntityPlayer self, EntityPlayer otherPlayer) {
+    private boolean hasLocalTeamColor(EntityPlayer otherPlayer) {
         if (
-            self == null ||
             otherPlayer == null ||
-            self.worldObj == null
+            otherPlayer.worldObj == null
         ) {
             return false;
         }
 
-        Scoreboard scoreboard = self.worldObj.getScoreboard();
+        char localTeamColor = contextService.getLocalTeamColor();
+        if (localTeamColor == '\0') {
+            return false;
+        }
+
+        Scoreboard scoreboard = otherPlayer.worldObj.getScoreboard();
         if (scoreboard == null) {
             return false;
         }
 
-        ScorePlayerTeam selfTeam = scoreboard.getPlayersTeam(self.getName());
         ScorePlayerTeam otherTeam = scoreboard.getPlayersTeam(otherPlayer.getName());
-        if (selfTeam == null || otherTeam == null) {
+        if (otherTeam == null) {
             return false;
         }
 
-        char selfColor = getTeamColor(selfTeam);
         char otherColor = getTeamColor(otherTeam);
-        return selfColor != '\0' && selfColor == otherColor;
+        return otherColor != '\0' && otherColor == localTeamColor;
     }
 
     private char getTeamColor(ScorePlayerTeam team) {

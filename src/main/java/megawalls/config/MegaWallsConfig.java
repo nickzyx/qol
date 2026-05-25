@@ -1,10 +1,12 @@
 package megawalls.config;
 
 import cc.polyfrost.oneconfig.config.Config;
+import cc.polyfrost.oneconfig.config.annotations.Color;
 import cc.polyfrost.oneconfig.config.annotations.KeyBind;
 import cc.polyfrost.oneconfig.config.annotations.Slider;
 import cc.polyfrost.oneconfig.config.annotations.Switch;
 import cc.polyfrost.oneconfig.config.core.OneKeyBind;
+import cc.polyfrost.oneconfig.config.core.OneColor;
 import cc.polyfrost.oneconfig.config.data.Mod;
 import cc.polyfrost.oneconfig.config.data.ModType;
 import megawalls.MegaWallsMod;
@@ -21,9 +23,6 @@ public final class MegaWallsConfig extends Config {
     @Switch(name = "Show Ability Name", category = "Mega Walls", subcategory = "Energy Tracker")
     public boolean showAbilityName = false;
 
-    @Switch(name = "Only in Deathmatch", category = "Mega Walls", subcategory = "Energy Tracker")
-    public boolean energyDeathmatchOnly = false;
-
     @KeyBind(name = "Toggle Tablist Display", category = "Mega Walls", subcategory = "Phoenix Resurrection Tracker")
     public OneKeyBind phoenixTablistKeybind = new OneKeyBind();
 
@@ -32,6 +31,9 @@ public final class MegaWallsConfig extends Config {
 
     @Switch(name = "Show Resurrection in tablist", category = "Mega Walls", subcategory = "Phoenix Resurrection Tracker")
     public boolean phoenixInTablist = false;
+
+    @Switch(name = "Show Resurrection in nametags", category = "Mega Walls", subcategory = "Phoenix Resurrection Tracker")
+    public boolean phoenixInNametags = false;
 
     @Switch(name = "Chat Notification", category = "Mega Walls", subcategory = "Phoenix Resurrection Tracker")
     public boolean phoenixAutoTalk = false;
@@ -65,6 +67,12 @@ public final class MegaWallsConfig extends Config {
 
     @Switch(name = "Show Potion in tablist", category = "Mega Walls", subcategory = "Potion Tracker (Experimental)")
     public boolean potionInTablist = true;
+
+    @Switch(name = "Show Potion in nametags", category = "Mega Walls", subcategory = "Potion Tracker (Experimental)")
+    public boolean potionInNametags = false;
+
+    @Color(name = "Nametag Color", category = "Mega Walls", subcategory = "Potion Tracker (Experimental)")
+    public OneColor potionNametagColor = new OneColor(255, 85, 85);
 
     @Switch(name = "Chat Notification", category = "Mega Walls", subcategory = "Potion Tracker (Experimental)")
     public boolean potionDebug = true;
@@ -129,14 +137,6 @@ public final class MegaWallsConfig extends Config {
 
     public boolean isPotionTablistDisplayEnabled() {
         return potionTablistDisplayEnabled;
-    }
-
-    public boolean canUseEnergy(boolean deathmatchActive) {
-        return !energyDeathmatchOnly || deathmatchActive;
-    }
-
-    public boolean canUsePhoenix(boolean deathmatchActive) {
-        return deathmatchActive;
     }
 
     public boolean canUseDiamond(boolean deathmatchActive) {
