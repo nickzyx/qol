@@ -1,0 +1,16 @@
+[
+  {
+    "modid": "qol",
+    "name": "qol",
+    "description": "Mega Walls mod with quality of life utilities.",
+    "version": "1.0.0",
+    "mcversion": "1.8.9",
+    "url": "https://github.com/nickzyx/qol",
+    "updateUrl": "",
+    "authorList": ["nick"],
+    "credits": "",
+    "logoFile": "assets/qol/qol-logo-dark.png",
+    "screenshots": [],
+    "dependencies": ["required-after:Forge@[11.15.1.2318,)", "required-after:oneconfig"]
+  }
+]

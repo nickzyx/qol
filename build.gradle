@@ -1,0 +1,92 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name = "forge"
+            url = "https://maven.minecraftforge.net/"
+        }
+    }
+    dependencies {
+        classpath "net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT"
+    }
+}
+
+apply plugin: "net.minecraftforge.gradle.forge"
+
+repositories {
+    maven {
+        name = "polyfrost"
+        url = "https://repo.polyfrost.org/releases"
+    }
+}
+
+version = "1.0.0"
+group = "megawalls"
+archivesBaseName = "qol"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+compileJava {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+    options.encoding = "UTF-8"
+    options.compilerArgs += ["-proc:none"]
+}
+
+minecraft {
+    version = "1.8.9-11.15.1.2318-1.8.9"
+    runDir = project.hasProperty("qolRunDir") ? project.property("qolRunDir") : "run"
+    mappings = "stable_22"
+    makeObfSourceJar = false
+}
+
+dependencies {
+    compileOnly "cc.polyfrost:oneconfig-1.8.9-forge:0.2.2-alpha228"
+}
+
+jar {
+    archiveName = "qol-${project.version}.jar"
+    destinationDir = file("$buildDir/devlibs")
+    manifest.attributes(
+            "ModSide": "CLIENT",
+            "ForceLoadAsMod": "true",
+            "FMLCorePlugin": "megawalls.core.CorePlugin",
+            "FMLCorePluginContainsFMLMod": "true",
+            "TweakOrder": "0",
+            "TweakClass": "cc.polyfrost.oneconfig.loader.stage0.LaunchWrapperTweaker"
+    )
+}
+
+reobfJar {
+    doLast {
+        def reobfDir = file("$buildDir/tmp/reobfJar")
+        def obfuscatedJar = reobfDir.listFiles()?.findAll { it.name.startsWith("obfuscated") && it.name.endsWith(".jar") }?.sort { -it.lastModified() }?.find()
+        if (obfuscatedJar == null) {
+            throw new GradleException("Failed to locate reobfuscated jar in ${reobfDir}")
+        }
+
+        def outputDir = file("$buildDir/libs")
+        def outputName = tasks.getByName("jar").archiveName
+
+        copy {
+            from obfuscatedJar
+            into outputDir
+            rename { outputName }
+        }
+    }
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include "mcmod.info"
+        expand "version": project.version, "mcversion": project.minecraft.version
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude "mcmod.info"
+    }
+}
