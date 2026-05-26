@@ -11,19 +11,19 @@ qol is a client-side Minecraft Forge 1.8.9 quality of life mod for Mega Walls.
 
 ## Install
 
-OneConfig is required. Install OneConfig in the same Forge 1.8.9 mods folder as `qol`.
+[OneConfig](https://github.com/Polyfrost/OneConfig) is required. Install OneConfig in the same Forge 1.8.9 mods folder as `qol`.
 
-Download the latest release jar from [GitHub Releases](https://github.com/nickzyx/qol/releases), then drop it into your Forge 1.8.9 mods folder.
+Download the latest release jar then drop it into your Forge 1.8.9 mods folder.
 
 ## Features
 
 ### Energy Tracker
 
-Reports tracked player energy information with an in-game keybind.
+Displays ability energy information with an in-game keybind.
 
 ### Phoenix Resurrection Tracker
 
-Tracks Phoenix resurrection state and displays it with Minecraft heart indicators.
+Tracks Phoenix resurrection state and displays it with heart indicators.
 
 ![Phoenix Resurrection example](examples/phoenix_example.png)
 
@@ -47,7 +47,7 @@ Warns when enemy Spider or Enderman players are within relevant mobility threat 
 
 ### Transparent Snowmen
 
-Renders Snowman mobs translucently while in Mega Walls.
+Renders Snowman mobs translucently.
 
 ![Transparent Snowmen example](examples/snowman_example.gif)
 
@@ -55,7 +55,7 @@ Renders Snowman mobs translucently while in Mega Walls.
 
 ### Potion Tracker
 
-Tracks remaining healing potions using tablist health increases.
+Tracks remaining healing potions for players.
 
 ![Potion Tracker example](examples/potion_tracker_example.png)
 
@@ -63,7 +63,7 @@ Tracks remaining healing potions using tablist health increases.
 
 ### Spider Leap Alert
 
-Detects Spider Leap activation using sound and movement velocity changes.
+Detects nearby Spider Leap activation.
 
 ![Spider Leap Alert compass example](examples/mobility_example_1.gif)
 
