@@ -11,7 +11,7 @@ qol is a client-side Minecraft Forge 1.8.9 quality of life mod for Mega Walls.
 
 ## Install
 
-[OneConfig](https://github.com/Polyfrost/OneConfig) is required. Install OneConfig in the same Forge 1.8.9 mods folder as `qol`.
+[OneConfig](https://github.com/Polyfrost/OneConfig) is required. If your instance does not already have OneConfig, install the OneConfig Bootstrap mod for Forge 1.8.9.
 
 Download the latest release jar then drop it into your Forge 1.8.9 mods folder.
 
@@ -52,6 +52,8 @@ Renders Snowman mobs translucently.
 ![Transparent Snowmen example](examples/snowman_example.gif)
 
 ## Experimental
+
+Experimental features are best-effort indicators and are not guaranteed to be 100% accurate.
 
 ### Potion Tracker
 
