@@ -7,74 +7,93 @@
 
 # qol
 
-qol is a client-side Minecraft Forge 1.8.9 Mega Walls utility mod.
+qol is a client-side Minecraft Forge 1.8.9 quality of life mod for Mega Walls.
 
 ## Install
 
 OneConfig is required. Install OneConfig in the same Forge 1.8.9 mods folder as `qol`.
 
-Copy `build\libs\qol-1.0.0.jar` into your Forge 1.8.9 mods folder.
+Download the latest release jar from [GitHub Releases](https://github.com/nickzyx/qol/releases), then drop it into your Forge 1.8.9 mods folder.
 
 ## Features
 
 ### Energy Tracker
 
-- Keybind to report current energy.
-- Optional display of hits needed and ability names.
+Reports tracked player energy information with an in-game keybind.
 
 ### Phoenix Resurrection Tracker
 
-- Shows Resurrection status in tablist with a Minecraft heart icon:
-  - full heart: Resurrection available
-  - empty heart: Resurrection used
-- Optional Resurrection icon in enemy nametags.
-- Optional chat notification when Resurrection is lost.
+Tracks Phoenix resurrection state and displays it with Minecraft heart indicators.
 
 ![Phoenix Resurrection example](examples/phoenix_example.png)
 
+![Phoenix Resurrection tablist example](examples/phoenix_example_2.png)
+
 ### Diamond Tracker
 
-- Detects crafted diamond armor and diamond swords.
-- Optional chat notifications for armor and swords.
-- Optional deathmatch-only mode.
+Detects non-kit diamond armor and diamond swords.
 
 ![Diamond Tracker example](examples/diamond_example.png)
 
-### Potion Tracker (Experimental)
+### Strength Tracker
 
-- Tracks remaining healing potions per class.
-- Optional potion icon and count in enemy nametags.
-- Optional deathmatch-only mode.
+Detects Zombie, Dreadlord, and Herobrine strength activations.
+
+![Strength Tracker example](examples/strength_example.png)
+
+### Mobility Alert
+
+Warns when enemy Spider or Enderman players are within relevant mobility threat range.
+
+### Transparent Snowmen
+
+Renders Snowman mobs translucently while in Mega Walls.
+
+![Transparent Snowmen example](examples/snowman_example.gif)
+
+## Experimental
+
+### Potion Tracker
+
+Tracks remaining healing potions using tablist health increases.
 
 ![Potion Tracker example](examples/potion_tracker_example.png)
 
 ![Potion chat example](examples/potion_example.png)
 
-### Strength Tracker
+### Spider Leap Alert
 
-- Detects Zombie, Dreadlord, and Herobrine strength.
-- Strength alerts print 3 times by default.
-- `Only Show One Alert Message` changes alerts to a single message.
-- Optional deathmatch-only mode.
+Detects Spider Leap activation using sound and movement velocity changes.
 
-### Mobility Alert
+![Spider Leap Alert compass example](examples/mobility_example_1.gif)
 
-- Alerts when enemy Spider or Enderman players are inside relevant mobility range.
-- Keybind toggle for enabling or disabling alerts in-game.
-- Configurable chat print interval from 1 to 5 seconds.
-- Optional class toggles for Spider and Enderman.
-- Optional deathmatch-only mode.
-
-![Mobility Alert example](examples/mobility_example.png)
+![Spider Leap Alert example](examples/mobility_example_2.gif)
 
 ## Configuration
 
-Open OneConfig and find the `qol` mod under the `Mega Walls` category. Most modules are disabled by default and can be enabled independently.
+Most modules are disabled by default and can be enabled independently in OneConfig.
+
+### General
+
+- `Energy Tracker`: Reports current tracked energy, with optional hits-needed and ability-name details.
+- `Phoenix Resurrection Tracker`: Enables resurrection tracking and optional chat notifications.
+- `Diamond Tracker`: Enables non-kit diamond tracking, chat notifications, and deathmatch-only mode.
+- `Strength Tracker`: Enables strength detection, Zombie strength detection, repeated alert behavior, and deathmatch-only mode.
+- `Mobility Alert`: Enables Spider and Enderman range alerts, chat notifications, chat interval, keybind toggle, and deathmatch-only mode.
+
+### Render
+
+- `Phoenix Resurrection Tracker`: Shows resurrection hearts in the tablist and nametags.
+- `Diamond Tracker`: Shows non-kit diamond armor and sword icons in the tablist.
+- `Visuals`: Enables transparent Snowman rendering, its keybind toggle, and opacity.
 
 ![Nametag indicator example](examples/indicator_example.png)
 
-- Phoenix nametags can show a heart before Phoenix players: green means Resurrection is available, red means Resurrection has been used.
-- Potion nametags can show the tracked potion count after the player name, such as `[2]`.
-- The Potion Tracker nametag color picker changes the potion count color. Minecraft 1.8 nametag text uses legacy chat colors, so the selected color is matched to the closest Minecraft text color.
+Phoenix nametag hearts are green when resurrection is available and red when it has been used. Potion nametags show the tracked potion count after the player name, such as `[2]`.
+
+### Experimental
+
+- `Potion Tracker`: Enables potion tracking, tablist display, nametag display, nametag color, chat notifications, and deathmatch-only mode.
+- `Mobility Alert`: Enables the Spider Leap GUI alert, draggable Leap Alert HUD, compass HUD, compass position/radius controls, and sound packet debug output.
 
 Tablist display for Phoenix, Diamond, and Potion modules can also be toggled with their configured keybinds while in Mega Walls.

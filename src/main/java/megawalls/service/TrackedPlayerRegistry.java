@@ -56,9 +56,6 @@ final class TrackedPlayerRegistry {
             trackedPlayerState.strengthExpiresAt = 0L;
             trackedPlayerState.lastStrengthTriggerAt = 0L;
             trackedPlayerState.lastPotionTablistHealth = Integer.MIN_VALUE;
-            trackedPlayerState.recentPotionTablistIncreaseUntil = 0L;
-            trackedPlayerState.healingPotionHoldStartedAt = 0L;
-            trackedPlayerState.healingPotionHoldGraceUntil = 0L;
             trackedPlayerState.lastPotionUseAt = 0L;
         }
     }
@@ -87,13 +84,7 @@ final class TrackedPlayerRegistry {
                 secondaryState.lastPotionTablistHealth != Integer.MIN_VALUE
                         ? secondaryState.lastPotionTablistHealth
                         : primaryState.lastPotionTablistHealth;
-        primaryState.recentPotionTablistIncreaseUntil = Math.max(
-                primaryState.recentPotionTablistIncreaseUntil,
-                secondaryState.recentPotionTablistIncreaseUntil
-        );
         primaryState.phoenixIndicatorSeen |= secondaryState.phoenixIndicatorSeen;
-        primaryState.healingPotionHoldStartedAt = Math.max(primaryState.healingPotionHoldStartedAt, secondaryState.healingPotionHoldStartedAt);
-        primaryState.healingPotionHoldGraceUntil = Math.max(primaryState.healingPotionHoldGraceUntil, secondaryState.healingPotionHoldGraceUntil);
         primaryState.lastPotionUseAt = Math.max(primaryState.lastPotionUseAt, secondaryState.lastPotionUseAt);
         primaryState.strengthExpiresAt = Math.max(primaryState.strengthExpiresAt, secondaryState.strengthExpiresAt);
         primaryState.lastStrengthTriggerAt = Math.max(primaryState.lastStrengthTriggerAt, secondaryState.lastStrengthTriggerAt);

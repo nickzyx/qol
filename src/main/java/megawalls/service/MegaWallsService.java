@@ -4,10 +4,14 @@ import megawalls.api.PlayerStateView;
 import megawalls.config.MegaWallsConfig;
 import megawalls.MegaWallsMod;
 import megawalls.domain.DiamondGear;
+import megawalls.render.TransparentSnowmanRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraft.entity.monster.EntitySnowman;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
@@ -33,10 +37,14 @@ public final class MegaWallsService {
             );
     private final MobilityAlertService mobilityAlertService =
             new MobilityAlertService(classResolver, contextService);
+    private final MobilityCompassRenderer mobilityCompassRenderer =
+            new MobilityCompassRenderer();
     private final NametagIconService nametagIconService =
             new NametagIconService(classResolver, contextService);
     private final PacketObservationService packetObservationService = new PacketObservationService(playerTrackingService);
     private final EnergyReportService energyReportService = new EnergyReportService(classResolver);
+    private final TransparentSnowmanRenderer transparentSnowmanRenderer =
+            new TransparentSnowmanRenderer();
 
     private MegaWallsService() {}
 
@@ -101,6 +109,8 @@ public final class MegaWallsService {
 
         contextService.updateSidebarState(world, classResolver);
 
+        MegaWallsConfig config = MegaWallsMod.getConfig();
+
         if (!contextService.isInMegaWalls()) {
             playerTrackingService.resetSnapshots();
             mobilityAlertService.reset();
@@ -117,7 +127,6 @@ public final class MegaWallsService {
 
         playerTrackingService.onClientTick(minecraft);
         nametagIconService.handleClientTick(minecraft);
-        MegaWallsConfig config = MegaWallsMod.getConfig();
         if (
                 config == null ||
                 config.canUseMobilityAlert(contextService.isDeathmatchActive())
@@ -144,7 +153,65 @@ public final class MegaWallsService {
     }
 
     @SubscribeEvent
+    public void onRenderOverlay(RenderGameOverlayEvent.Text event) {
+        if (
+                event == null ||
+                !contextService.isInMegaWalls() ||
+                !contextService.isTrackingActive()
+        ) {
+            return;
+        }
+
+        MegaWallsConfig config = MegaWallsMod.getConfig();
+        if (
+                config == null ||
+                !config.mobilityAlertEnabled ||
+                !config.canUseMobilityAlert(contextService.isDeathmatchActive())
+        ) {
+            return;
+        }
+
+        Minecraft minecraft = Minecraft.getMinecraft();
+        if (config.mobilityCompassHud) {
+            mobilityCompassRenderer.render(
+                    minecraft,
+                    config,
+                    mobilityAlertService.getActiveAlerts()
+            );
+        }
+
+        if (config.mobilityLeapAlertHud != null) {
+            config.mobilityLeapAlertHud.renderActive(minecraft, config);
+        }
+    }
+
+    @SubscribeEvent
+    public void onRenderLivingPre(RenderLivingEvent.Pre event) {
+        if (transparentSnowmanRenderer.isRenderingTransparentSnowman() || event == null) {
+            return;
+        }
+
+        if (!(event.entity instanceof EntitySnowman)) {
+            return;
+        }
+
+        MegaWallsConfig config = MegaWallsMod.getConfig();
+        if (
+                config == null ||
+                !config.transparentSnowmen ||
+                !contextService.isInMegaWalls() ||
+                !contextService.isTrackingActive()
+        ) {
+            return;
+        }
+
+        transparentSnowmanRenderer.render(event, config.transparentSnowmenOpacity);
+    }
+
+    @SubscribeEvent
     public void onPlaySound(PlaySoundEvent event) {
+        mobilityAlertService.onPlaySound(event);
+
         if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
             return;
         }

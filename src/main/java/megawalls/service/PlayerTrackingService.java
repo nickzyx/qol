@@ -17,10 +17,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
-import net.minecraft.item.ItemPotion;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
-import net.minecraft.potion.PotionEffect;
 import net.minecraft.scoreboard.IScoreObjectiveCriteria;
 import net.minecraft.scoreboard.Score;
 import net.minecraft.scoreboard.ScoreObjective;
@@ -36,12 +34,6 @@ final class PlayerTrackingService {
     private static final int DREADLORD_STRENGTH_SECONDS = 5;
     private static final long HEROBRINE_STRENGTH_MS = 6000L;
     private static final int HEROBRINE_STRENGTH_SECONDS = 6;
-    private static final long POTION_CONFIRM_WINDOW_MS = 1500L;
-    private static final long POTION_MIN_DRINK_MS = 1600L;
-    private static final long POTION_MAX_DRINK_MS = 6000L;
-    private static final long POTION_SWITCH_GRACE_MS = 500L;
-    private static final long POTION_USE_DEBOUNCE_MS = 750L;
-    private static final double POTION_HEALTH_THRESHOLD = 1.5D;
     private static final double ZOMBIE_STRENGTH_SOUND_RADIUS_SQ = 9.0D;
     private static final String ZOMBIE_HURT_SOUND = "mob.zombie.hurt";
     private static final String ZOMBIE_REMEDY_SOUND = "mob.zombie.remedy";
@@ -359,9 +351,6 @@ final class PlayerTrackingService {
         );
 
         MegaWallsConfig config = MegaWallsMod.getConfig();
-        if (equipmentSlot == 0) {
-            observeHeldPotionState(trackedPlayerState, itemStack, config);
-        }
 
         if (
             config == null ||
@@ -756,13 +745,7 @@ final class PlayerTrackingService {
 
         boolean alive = !player.isDead && currentHealth > 0.0F;
 
-        if (trackedPlayerState.potionClass != megaWallsClass) {
-            trackedPlayerState.potionClass = megaWallsClass;
-            trackedPlayerState.remainingPotions =
-                megaWallsClass.getPotionCount();
-            trackedPlayerState.hasPotionSample = true;
-            trackedPlayerState.lastHealth = currentHealth;
-            trackedPlayerState.wasAlive = alive;
+        if (!ensurePotionTrackingState(trackedPlayerState, megaWallsClass)) {
             return;
         }
 
@@ -774,72 +757,60 @@ final class PlayerTrackingService {
         }
 
         if (!trackedPlayerState.wasAlive && alive) {
-            trackedPlayerState.remainingPotions =
-                megaWallsClass.getPotionCount();
             trackedPlayerState.lastHealth = currentHealth;
-            trackedPlayerState.wasAlive = true;
+            trackedPlayerState.wasAlive = alive;
             return;
-        }
-
-        if (
-            alive &&
-            trackedPlayerState.wasAlive &&
-            trackedPlayerState.remainingPotions > 0
-        ) {
-            observePotionHealthIncrease(
-                trackedPlayerState,
-                player,
-                megaWallsClass,
-                currentHealth,
-                config
-            );
         }
 
         trackedPlayerState.lastHealth = currentHealth;
         trackedPlayerState.wasAlive = alive;
     }
 
-    private void observePotionHealthIncrease(
+    private boolean ensurePotionTrackingState(
         TrackedPlayerState trackedPlayerState,
-        EntityPlayer player,
-        MegaWallsClass megaWallsClass,
-        float currentHealth,
-        MegaWallsConfig config
+        MegaWallsClass megaWallsClass
     ) {
-        double previousHealth = trackedPlayerState.lastHealth;
-        double deltaHealth = (double) currentHealth - previousHealth;
-        if (deltaHealth <= 0.0D) {
-            return;
+        if (
+            trackedPlayerState == null ||
+            megaWallsClass == null ||
+            megaWallsClass.getPotionCount() < 0
+        ) {
+            return false;
         }
 
-        long now = System.currentTimeMillis();
+        if (trackedPlayerState.potionClass != megaWallsClass) {
+            trackedPlayerState.potionClass = megaWallsClass;
+            trackedPlayerState.remainingPotions =
+                megaWallsClass.getPotionCount();
+        }
+        if (trackedPlayerState.remainingPotions < 0) {
+            trackedPlayerState.remainingPotions =
+                megaWallsClass.getPotionCount();
+        }
+
+        return true;
+    }
+
+    private void recordPotionUse(
+        TrackedPlayerState trackedPlayerState,
+        MegaWallsConfig config
+    ) {
         if (
-            now - trackedPlayerState.lastPotionUseAt < POTION_USE_DEBOUNCE_MS ||
-            !isHealingPotionHeldRecently(trackedPlayerState, now)
+            trackedPlayerState == null ||
+            trackedPlayerState.remainingPotions <= 0
         ) {
             return;
         }
 
-        double expectedHealing = getExpectedCappedPotionHealing(
-            player,
-            megaWallsClass,
-            previousHealth
-        );
-        if (expectedHealing <= 0.0D) {
-            return;
-        }
-
-        if (Math.abs(deltaHealth - expectedHealing) > POTION_HEALTH_THRESHOLD) {
-            return;
-        }
-
+        long now = System.currentTimeMillis();
         trackedPlayerState.remainingPotions--;
         trackedPlayerState.lastPotionUseAt = now;
-        trackedPlayerState.healingPotionHoldStartedAt = now;
-        trackedPlayerState.healingPotionHoldGraceUntil = 0L;
         if (config.potionDebug) {
             ChatNotifier.info(
-                aquaName(player.getName(), EnumChatFormatting.WHITE) +
+                aquaName(
+                    trackedPlayerState.profileName,
+                    EnumChatFormatting.WHITE
+                ) +
                     " used a healing potion. Remaining: " +
                     redValue(
                         trackedPlayerState.remainingPotions,
@@ -847,16 +818,6 @@ final class PlayerTrackingService {
                     )
             );
         }
-    }
-
-    private double getExpectedCappedPotionHealing(
-        EntityPlayer player,
-        MegaWallsClass megaWallsClass,
-        double previousHealth
-    ) {
-        double maxHealth = player == null ? 20.0D : player.getMaxHealth();
-        double missingHealth = Math.max(0.0D, maxHealth - previousHealth);
-        return Math.min(megaWallsClass.getPotionHealth(), missingHealth);
     }
 
     private void updateStrengthState(
@@ -899,7 +860,8 @@ final class PlayerTrackingService {
             !config.strengthDetectorEnabled ||
             !canUseStrength(config) ||
             strippedText == null ||
-            strippedText.isEmpty()
+            strippedText.isEmpty() ||
+            isLikelyPlayerChatMessage(strippedText)
         ) {
             return;
         }
@@ -1042,6 +1004,38 @@ final class PlayerTrackingService {
         }
 
         return null;
+    }
+
+    private boolean isLikelyPlayerChatMessage(String strippedText) {
+        int separatorIndex = strippedText.indexOf(": ");
+        if (separatorIndex <= 0) {
+            return false;
+        }
+
+        String senderText = strippedText.substring(0, separatorIndex);
+        int tokenStart = -1;
+        for (int index = 0; index <= senderText.length(); index++) {
+            boolean atEnd = index == senderText.length();
+            char currentChar = atEnd ? '\0' : senderText.charAt(index);
+            if (!atEnd && isNameCharacter(currentChar)) {
+                if (tokenStart < 0) {
+                    tokenStart = index;
+                }
+                continue;
+            }
+
+            if (tokenStart >= 0) {
+                String playerName = resolveTrackedPlayerNameToken(
+                    senderText.substring(tokenStart, index)
+                );
+                if (playerName != null) {
+                    return true;
+                }
+                tokenStart = -1;
+            }
+        }
+
+        return false;
     }
 
     private String resolveTrackedPlayerNameToken(String token) {
@@ -1193,87 +1187,37 @@ final class PlayerTrackingService {
             trackedPlayerState == null ||
             tablistHealth == null ||
             config == null ||
+            !config.potionDetectorEnabled ||
             !canUsePotion(config)
         ) {
             return;
         }
 
         int currentTablistHealth = tablistHealth.intValue();
+        MegaWallsClass megaWallsClass = trackedPlayerState.megaWallsClass;
+        if (!ensurePotionTrackingState(trackedPlayerState, megaWallsClass)) {
+            trackedPlayerState.lastPotionTablistHealth = currentTablistHealth;
+            return;
+        }
+
         if (
             trackedPlayerState.lastPotionTablistHealth != Integer.MIN_VALUE &&
-            currentTablistHealth > trackedPlayerState.lastPotionTablistHealth
+            trackedPlayerState.lastPotionTablistHealth > 0 &&
+            trackedPlayerState.remainingPotions > 0
         ) {
-            trackedPlayerState.recentPotionTablistIncreaseUntil =
-                System.currentTimeMillis() + POTION_CONFIRM_WINDOW_MS;
+            int healthGain =
+                currentTablistHealth - trackedPlayerState.lastPotionTablistHealth;
+            if (isPotionHealthGain(healthGain)) {
+                recordPotionUse(trackedPlayerState, config);
+            }
         }
 
         trackedPlayerState.lastPotionTablistHealth = currentTablistHealth;
     }
 
-    private boolean isHealingPotionHeldRecently(
-        TrackedPlayerState trackedPlayerState,
-        long now
-    ) {
-        if (trackedPlayerState == null) {
-            return false;
-        }
-
-        long holdStartedAt = trackedPlayerState.healingPotionHoldStartedAt;
-        if (holdStartedAt <= 0L) {
-            return false;
-        }
-
-        long heldFor = now - holdStartedAt;
-        return heldFor >= POTION_MIN_DRINK_MS &&
-            heldFor <= POTION_MAX_DRINK_MS &&
-            (
-                trackedPlayerState.healingPotionHoldGraceUntil == 0L ||
-                trackedPlayerState.healingPotionHoldGraceUntil >= now
-            );
-    }
-
-    private void observeHeldPotionState(
-        TrackedPlayerState trackedPlayerState,
-        ItemStack itemStack,
-        MegaWallsConfig config
-    ) {
-        if (trackedPlayerState == null) {
-            return;
-        }
-
-        long now = System.currentTimeMillis();
-        if (
-            config != null &&
-            canUsePotion(config) &&
-            itemStack != null &&
-            isInstantHealingPotion(itemStack)
-        ) {
-            if (
-                trackedPlayerState.healingPotionHoldStartedAt <= 0L ||
-                trackedPlayerState.healingPotionHoldGraceUntil > 0L ||
-                now - trackedPlayerState.healingPotionHoldStartedAt >
-                    POTION_MAX_DRINK_MS
-            ) {
-                trackedPlayerState.healingPotionHoldStartedAt = now;
-            }
-            trackedPlayerState.healingPotionHoldGraceUntil = 0L;
-            return;
-        }
-
-        if (trackedPlayerState.healingPotionHoldStartedAt <= 0L) {
-            trackedPlayerState.healingPotionHoldGraceUntil = 0L;
-            return;
-        }
-
-        long heldFor = now - trackedPlayerState.healingPotionHoldStartedAt;
-        if (heldFor >= POTION_MIN_DRINK_MS) {
-            trackedPlayerState.healingPotionHoldGraceUntil =
-                now + POTION_SWITCH_GRACE_MS;
-            return;
-        }
-
-        trackedPlayerState.healingPotionHoldStartedAt = 0L;
-        trackedPlayerState.healingPotionHoldGraceUntil = 0L;
+    private boolean isPotionHealthGain(int healthGain) {
+        return (healthGain >= 15 && healthGain <= 17) ||
+            (healthGain >= 19 && healthGain <= 21);
     }
 
     private boolean canUseDiamond(MegaWallsConfig config) {
@@ -1295,28 +1239,6 @@ final class PlayerTrackingService {
             config != null &&
             config.canUseStrength(contextService.isDeathmatchActive())
         );
-    }
-
-    private boolean isInstantHealingPotion(ItemStack itemStack) {
-        if (itemStack == null || !(itemStack.getItem() instanceof ItemPotion)) {
-            return false;
-        }
-
-        List<PotionEffect> potionEffects =
-            ((ItemPotion) itemStack.getItem()).getEffects(itemStack);
-        if (potionEffects == null || potionEffects.isEmpty()) {
-            return false;
-        }
-
-        for (PotionEffect potionEffect : potionEffects) {
-            if (
-                potionEffect != null &&
-                potionEffect.getPotionID() == Potion.heal.id
-            ) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void refreshPotionLiveState(

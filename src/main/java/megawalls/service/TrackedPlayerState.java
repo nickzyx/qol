@@ -20,10 +20,7 @@ final class TrackedPlayerState {
     float lastHealth;
     boolean wasAlive;
     int lastPotionTablistHealth = Integer.MIN_VALUE;
-    long recentPotionTablistIncreaseUntil;
     boolean phoenixIndicatorSeen;
-    long healingPotionHoldStartedAt;
-    long healingPotionHoldGraceUntil;
     long lastPotionUseAt;
     long strengthExpiresAt;
     long lastStrengthTriggerAt;
@@ -55,9 +52,6 @@ final class TrackedPlayerState {
         lastHealth = 0.0F;
         wasAlive = false;
         lastPotionTablistHealth = Integer.MIN_VALUE;
-        recentPotionTablistIncreaseUntil = 0L;
-        healingPotionHoldStartedAt = 0L;
-        healingPotionHoldGraceUntil = 0L;
         lastPotionUseAt = 0L;
     }
 
