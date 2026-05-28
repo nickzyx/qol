@@ -26,6 +26,12 @@ public final class MegaWallsConfig extends Config {
     @Switch(size = OptionSize.DUAL, name = "Show Ability Name", description = "Include the tracked class ability name when reporting energy information.", category = "General", subcategory = "Energy Tracker")
     public boolean showAbilityName = false;
 
+    @Switch(size = OptionSize.DUAL, name = "Enabled", description = "Prevent accidental crafting table, chest, furnace, and hopper interactions.", category = "General", subcategory = "Interaction Guard")
+    public boolean swordInteractionGuard = false;
+
+    @Switch(size = OptionSize.DUAL, name = "Only Empty Hand", description = "Only allow guarded block interactions when your hand is empty. When disabled, guarded interactions are blocked while holding a sword.", category = "General", subcategory = "Interaction Guard")
+    public boolean interactionGuardEmptyHandOnly = false;
+
     @KeyBind(size = OptionSize.DUAL, name = "Toggle Tablist Display", description = "Press this key in Mega Walls to show or hide Phoenix resurrection icons in the tablist.", category = "Render", subcategory = "Phoenix Resurrection Tracker")
     public OneKeyBind phoenixTablistKeybind = new OneKeyBind();
 
@@ -110,9 +116,6 @@ public final class MegaWallsConfig extends Config {
     @Switch(size = OptionSize.DUAL, name = "Enderman", description = "Detect enemy Endermen in Teleport range.", category = "General", subcategory = "Mobility Alert")
     public boolean mobilityAlertEnderman = true;
 
-    @Switch(size = OptionSize.DUAL, name = "Show Compass HUD", description = "Show nearby active mobility alerts on the compass HUD.", category = "Experimental", subcategory = "Mobility Alert")
-    public boolean mobilityCompassHud = true;
-
     @Switch(size = OptionSize.DUAL, name = "Chat Notification", description = "Print chat alerts for Spider Leap and Enderman Teleport range warnings.", category = "General", subcategory = "Mobility Alert")
     public boolean mobilityChatNotification = true;
 
@@ -122,20 +125,23 @@ public final class MegaWallsConfig extends Config {
     @HUD(name = "Leap Alert HUD", category = "Experimental", subcategory = "Mobility Alert")
     public MobilityLeapAlertHud mobilityLeapAlertHud = new MobilityLeapAlertHud();
 
+    @Switch(size = OptionSize.DUAL, name = "Show Compass HUD", description = "Show nearby active mobility alerts on the compass HUD.", category = "Experimental", subcategory = "Mobility HUD")
+    public boolean mobilityCompassHud = true;
+
+    @Slider(name = "Compass X", description = "Move the Mobility Alert compass horizontally across the screen.", min = 0.0F, max = 100.0F, step = 1, category = "Experimental", subcategory = "Mobility HUD")
+    public int mobilityCompassX = 50;
+
+    @Slider(name = "Compass Y", description = "Move the Mobility Alert compass vertically across the screen.", min = 0.0F, max = 100.0F, step = 1, category = "Experimental", subcategory = "Mobility HUD")
+    public int mobilityCompassY = 50;
+
+    @Slider(name = "Compass Radius", description = "Adjust how far compass markers sit from the HUD center.", min = 10.0F, max = 160.0F, step = 1, category = "Experimental", subcategory = "Mobility HUD")
+    public int mobilityCompassRadius = 55;
+
     @Switch(size = OptionSize.DUAL, name = "Debug Sound Packets", description = "Print incoming sound packet names to chat for temporary detection testing.", category = "Experimental", subcategory = "Mobility Alert")
     public boolean mobilityDebugSounds = false;
 
     @Slider(name = "Chat Print Interval", description = "Set the cooldown between repeated Mobility Alert chat messages.", min = 1.0F, max = 10.0F, step = 1, category = "General", subcategory = "Mobility Alert")
     public int mobilityAlertIntervalSeconds = 5;
-
-    @Slider(name = "Compass X", description = "Move the Mobility Alert compass horizontally across the screen.", min = 0.0F, max = 100.0F, step = 1, category = "Experimental", subcategory = "Mobility Alert")
-    public int mobilityCompassX = 50;
-
-    @Slider(name = "Compass Y", description = "Move the Mobility Alert compass vertically across the screen.", min = 0.0F, max = 100.0F, step = 1, category = "Experimental", subcategory = "Mobility Alert")
-    public int mobilityCompassY = 50;
-
-    @Slider(name = "Compass Radius", description = "Adjust how far compass markers sit from the HUD center.", min = 10.0F, max = 160.0F, step = 1, category = "Experimental", subcategory = "Mobility Alert")
-    public int mobilityCompassRadius = 55;
 
     @Switch(size = OptionSize.DUAL, name = "Only in Deathmatch", description = "Only run Mobility Alert after deathmatch starts.", category = "General", subcategory = "Mobility Alert")
     public boolean mobilityAlertDeathmatchOnly = false;
@@ -145,6 +151,9 @@ public final class MegaWallsConfig extends Config {
 
     @Switch(size = OptionSize.DUAL, name = "Transparent Snowmen", description = "Render Snowman mobs translucent while in Mega Walls.", category = "Render", subcategory = "Visuals")
     public boolean transparentSnowmen = false;
+
+    @Switch(size = OptionSize.DUAL, name = "Apply to All Snowmen", description = "Render enemy Snowman mobs translucent too. When disabled, only ally Snowman mobs are affected.", category = "Render", subcategory = "Visuals")
+    public boolean transparentSnowmenAllTeams = false;
 
     @Slider(name = "Snowman Opacity", description = "Adjust how visible transparent Snowman mobs are.", min = 10.0F, max = 90.0F, step = 5, category = "Render", subcategory = "Visuals")
     public int transparentSnowmenOpacity = 35;

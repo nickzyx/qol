@@ -5,21 +5,27 @@
   </picture>
 </div>
 
-# qol
-
 qol is a client-side Minecraft Forge 1.8.9 quality of life mod for Mega Walls.
+
+---
 
 ## Install
 
 [OneConfig](https://github.com/Polyfrost/OneConfig) is required. If your instance does not already have OneConfig, install the OneConfig Bootstrap mod for Forge 1.8.9.
 
-Download the latest release jar then drop it into your Forge 1.8.9 mods folder.
+Download the latest release jar then drop it into your mods folder.
+
+---
 
 ## Features
 
 ### Energy Tracker
 
 Displays ability energy information with an in-game keybind.
+
+### Interaction Guard
+
+Prevents accidental interactions while holding sword or items (disables right clicking crafting tables, chests, furnaces, etc.).
 
 ### Phoenix Resurrection Tracker
 
@@ -51,6 +57,8 @@ Renders Snowman mobs translucently.
 
 ![Transparent Snowmen example](examples/snowman_example.gif)
 
+---
+
 ## Experimental
 
 Experimental features are best-effort indicators and are not guaranteed to be 100% accurate.
@@ -71,6 +79,8 @@ Detects nearby Spider Leap activation.
 
 ![Spider Leap Alert example](examples/mobility_example_2.gif)
 
+---
+
 ## Configuration
 
 Most modules are disabled by default and can be enabled independently in OneConfig.
@@ -78,6 +88,7 @@ Most modules are disabled by default and can be enabled independently in OneConf
 ### General
 
 - `Energy Tracker`: Reports current tracked energy, with optional hits-needed and ability-name details.
+- `Interaction Guard`: Prevents opening crafting tables, chests, furnaces, and hoppers while holding a sword, with an optional empty-hand-only mode.
 - `Phoenix Resurrection Tracker`: Enables resurrection tracking and optional chat notifications.
 - `Diamond Tracker`: Enables non-kit diamond tracking, chat notifications, and deathmatch-only mode.
 - `Strength Tracker`: Enables strength detection, Zombie strength detection, repeated alert behavior, and deathmatch-only mode.
@@ -87,7 +98,7 @@ Most modules are disabled by default and can be enabled independently in OneConf
 
 - `Phoenix Resurrection Tracker`: Shows resurrection hearts in the tablist and nametags.
 - `Diamond Tracker`: Shows non-kit diamond armor and sword icons in the tablist.
-- `Visuals`: Enables transparent Snowman rendering, its keybind toggle, and opacity.
+- `Visuals`: Enables ally-only transparent Snowman rendering, optional all-team rendering, its keybind toggle, and opacity.
 
 ![Nametag indicator example](examples/indicator_example.png)
 
