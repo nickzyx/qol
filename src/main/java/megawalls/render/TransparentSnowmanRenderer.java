@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.entity.layers.LayerSnowmanHead;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.monster.EntitySnowman;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
@@ -21,49 +20,54 @@ import org.lwjgl.opengl.GL11;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public final class TransparentSnowmanRenderer {
 
     private static Field layerRenderersField;
-    private boolean renderingTransparentSnowman;
+    private final Map<RendererLivingEntity, List<LayerRenderer>> removedLayersByRenderer =
+            new IdentityHashMap<RendererLivingEntity, List<LayerRenderer>>();
+    private final Map<EntitySnowman, Float> activeAlphaBySnowman =
+            new IdentityHashMap<EntitySnowman, Float>();
 
-    public boolean isRenderingTransparentSnowman() {
-        return renderingTransparentSnowman;
-    }
-
-    public void render(RenderLivingEvent.Pre event, int opacityPercent) {
-        if (renderingTransparentSnowman || event == null || !(event.entity instanceof EntitySnowman)) {
+    public void beginRender(RenderLivingEvent.Pre event, int opacityPercent) {
+        if (event == null || !(event.entity instanceof EntitySnowman)) {
             return;
         }
 
         float alpha = getAlpha(opacityPercent);
-        event.setCanceled(true);
-        renderingTransparentSnowman = true;
-        GlStateManager.pushMatrix();
+        activeAlphaBySnowman.put((EntitySnowman) event.entity, Float.valueOf(alpha));
         List<LayerRenderer> removedSnowmanLayers = removeSnowmanHeadLayers(event.renderer);
+        if (!removedSnowmanLayers.isEmpty()) {
+            removedLayersByRenderer.put(event.renderer, removedSnowmanLayers);
+        }
+
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        GlStateManager.depthMask(false);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
+    }
+
+    public void finishRender(RenderLivingEvent.Post event) {
+        if (event == null || !(event.entity instanceof EntitySnowman)) {
+            return;
+        }
+
+        Float alpha = activeAlphaBySnowman.remove(event.entity);
+        if (alpha == null) {
+            return;
+        }
+
         try {
-            GlStateManager.enableBlend();
-            GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            GlStateManager.depthMask(false);
-            GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
-            event.renderer.doRender(
-                    (Entity) event.entity,
-                    event.x,
-                    event.y,
-                    event.z,
-                    event.entity.rotationYaw,
-                    0.0F
-            );
-            renderTransparentSnowmanHead(event, alpha);
+            renderTransparentSnowmanHead(event, alpha.floatValue());
         } finally {
-            restoreSnowmanHeadLayers(event.renderer, removedSnowmanLayers);
+            restoreSnowmanHeadLayers(event.renderer, removedLayersByRenderer.remove(event.renderer));
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             GlStateManager.depthMask(true);
             GlStateManager.disableBlend();
-            GlStateManager.popMatrix();
-            renderingTransparentSnowman = false;
         }
     }
 
@@ -131,7 +135,7 @@ public final class TransparentSnowmanRenderer {
         return layerRenderersField;
     }
 
-    private void renderTransparentSnowmanHead(RenderLivingEvent.Pre event, float alpha) {
+    private void renderTransparentSnowmanHead(RenderLivingEvent event, float alpha) {
         if (!(event.entity instanceof EntitySnowman) || !(event.renderer instanceof RenderSnowMan)) {
             return;
         }
@@ -182,20 +186,23 @@ public final class TransparentSnowmanRenderer {
         );
 
         GlStateManager.pushMatrix();
-        GlStateManager.translate(event.x, event.y, event.z);
-        GlStateManager.rotate(180.0F - bodyYaw, 0.0F, 1.0F, 0.0F);
-        GlStateManager.enableRescaleNormal();
-        GlStateManager.scale(-1.0F, -1.0F, 1.0F);
-        GlStateManager.translate(0.0F, -1.5078125F, 0.0F);
-        model.head.postRender(0.0625F);
-        float scale = 0.625F;
-        GlStateManager.translate(0.0F, -0.34375F, 0.0F);
-        GlStateManager.rotate(180.0F, 0.0F, 1.0F, 0.0F);
-        GlStateManager.scale(scale, -scale, -scale);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
-        renderTransparentPumpkinCube(Minecraft.getMinecraft(), alpha);
-        GlStateManager.disableRescaleNormal();
-        GlStateManager.popMatrix();
+        try {
+            GlStateManager.translate(event.x, event.y, event.z);
+            GlStateManager.rotate(180.0F - bodyYaw, 0.0F, 1.0F, 0.0F);
+            GlStateManager.enableRescaleNormal();
+            GlStateManager.scale(-1.0F, -1.0F, 1.0F);
+            GlStateManager.translate(0.0F, -1.5078125F, 0.0F);
+            model.head.postRender(0.0625F);
+            float scale = 0.625F;
+            GlStateManager.translate(0.0F, -0.34375F, 0.0F);
+            GlStateManager.rotate(180.0F, 0.0F, 1.0F, 0.0F);
+            GlStateManager.scale(scale, -scale, -scale);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
+            renderTransparentPumpkinCube(Minecraft.getMinecraft(), alpha);
+        } finally {
+            GlStateManager.disableRescaleNormal();
+            GlStateManager.popMatrix();
+        }
     }
 
     private float interpolateRotation(float previous, float current, float partialTicks) {

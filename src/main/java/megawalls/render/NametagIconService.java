@@ -1,45 +1,46 @@
-package megawalls.service;
+package megawalls.render;
 
+import cc.polyfrost.oneconfig.config.core.OneColor;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import megawalls.MegaWallsMod;
 import megawalls.api.PlayerStateView;
 import megawalls.config.MegaWallsConfig;
-import cc.polyfrost.oneconfig.config.core.OneColor;
+import megawalls.service.MegaWallsClassResolver;
+import megawalls.service.MegaWallsContextService;
+import megawalls.service.MegaWallsService;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IChatComponent;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-final class NametagIconService {
+public final class NametagIconService {
 
     private static final String PHOENIX_FULL_HEART = "\u2764 ";
-    private static final String LEGACY_POTION_PREFIX = "QOLP:";
-    private static final LegacyTextColor[] POTION_TEXT_COLORS = new LegacyTextColor[] {
-        new LegacyTextColor(EnumChatFormatting.DARK_BLUE, 0, 0, 170),
-        new LegacyTextColor(EnumChatFormatting.DARK_GREEN, 0, 170, 0),
-        new LegacyTextColor(EnumChatFormatting.DARK_AQUA, 0, 170, 170),
-        new LegacyTextColor(EnumChatFormatting.DARK_RED, 170, 0, 0),
-        new LegacyTextColor(EnumChatFormatting.DARK_PURPLE, 170, 0, 170),
-        new LegacyTextColor(EnumChatFormatting.GOLD, 255, 170, 0),
-        new LegacyTextColor(EnumChatFormatting.GRAY, 170, 170, 170),
-        new LegacyTextColor(EnumChatFormatting.DARK_GRAY, 85, 85, 85),
-        new LegacyTextColor(EnumChatFormatting.BLUE, 85, 85, 255),
-        new LegacyTextColor(EnumChatFormatting.GREEN, 85, 255, 85),
-        new LegacyTextColor(EnumChatFormatting.AQUA, 85, 255, 255),
-        new LegacyTextColor(EnumChatFormatting.RED, 255, 85, 85),
-        new LegacyTextColor(EnumChatFormatting.LIGHT_PURPLE, 255, 85, 255),
-        new LegacyTextColor(EnumChatFormatting.YELLOW, 255, 255, 85),
-        new LegacyTextColor(EnumChatFormatting.WHITE, 255, 255, 255)
+    private static final MinecraftTextColor[] POTION_TEXT_COLORS = new MinecraftTextColor[] {
+        new MinecraftTextColor(EnumChatFormatting.DARK_BLUE, 0, 0, 170),
+        new MinecraftTextColor(EnumChatFormatting.DARK_GREEN, 0, 170, 0),
+        new MinecraftTextColor(EnumChatFormatting.DARK_AQUA, 0, 170, 170),
+        new MinecraftTextColor(EnumChatFormatting.DARK_RED, 170, 0, 0),
+        new MinecraftTextColor(EnumChatFormatting.DARK_PURPLE, 170, 0, 170),
+        new MinecraftTextColor(EnumChatFormatting.GOLD, 255, 170, 0),
+        new MinecraftTextColor(EnumChatFormatting.GRAY, 170, 170, 170),
+        new MinecraftTextColor(EnumChatFormatting.DARK_GRAY, 85, 85, 85),
+        new MinecraftTextColor(EnumChatFormatting.BLUE, 85, 85, 255),
+        new MinecraftTextColor(EnumChatFormatting.GREEN, 85, 255, 85),
+        new MinecraftTextColor(EnumChatFormatting.AQUA, 85, 255, 255),
+        new MinecraftTextColor(EnumChatFormatting.RED, 255, 85, 85),
+        new MinecraftTextColor(EnumChatFormatting.LIGHT_PURPLE, 255, 85, 255),
+        new MinecraftTextColor(EnumChatFormatting.YELLOW, 255, 255, 85),
+        new MinecraftTextColor(EnumChatFormatting.WHITE, 255, 255, 255)
     };
 
     private final MegaWallsClassResolver classResolver;
     private final MegaWallsContextService contextService;
 
-    NametagIconService(
+    public NametagIconService(
         MegaWallsClassResolver classResolver,
         MegaWallsContextService contextService
     ) {
@@ -47,7 +48,7 @@ final class NametagIconService {
         this.contextService = contextService;
     }
 
-    void handleClientTick(Minecraft minecraft) {
+    public void handleClientTick(Minecraft minecraft) {
         MegaWallsConfig config = MegaWallsMod.getConfig();
         if (
             minecraft == null ||
@@ -70,7 +71,7 @@ final class NametagIconService {
         }
     }
 
-    void reset(Minecraft minecraft) {
+    public void reset(Minecraft minecraft) {
         if (minecraft == null || minecraft.theWorld == null) {
             return;
         }
@@ -207,7 +208,6 @@ final class NametagIconService {
         }
 
         return text.indexOf(PHOENIX_FULL_HEART.trim()) >= 0 ||
-            text.indexOf(LEGACY_POTION_PREFIX) >= 0 ||
             isPotionCountSuffix(component, text);
     }
 
@@ -227,9 +227,9 @@ final class NametagIconService {
             return EnumChatFormatting.RED;
         }
 
-        LegacyTextColor closestColor = POTION_TEXT_COLORS[0];
+        MinecraftTextColor closestColor = POTION_TEXT_COLORS[0];
         int closestDistance = Integer.MAX_VALUE;
-        for (LegacyTextColor textColor : POTION_TEXT_COLORS) {
+        for (MinecraftTextColor textColor : POTION_TEXT_COLORS) {
             int redDistance = color.getRed() - textColor.red;
             int greenDistance = color.getGreen() - textColor.green;
             int blueDistance = color.getBlue() - textColor.blue;
@@ -251,7 +251,7 @@ final class NametagIconService {
             return false;
         }
 
-        for (LegacyTextColor textColor : POTION_TEXT_COLORS) {
+        for (MinecraftTextColor textColor : POTION_TEXT_COLORS) {
             if (text.indexOf(textColor.formatting.toString()) >= 0) {
                 return true;
             }
@@ -259,13 +259,13 @@ final class NametagIconService {
         return false;
     }
 
-    private static final class LegacyTextColor {
+    private static final class MinecraftTextColor {
         private final EnumChatFormatting formatting;
         private final int red;
         private final int green;
         private final int blue;
 
-        private LegacyTextColor(
+        private MinecraftTextColor(
             EnumChatFormatting formatting,
             int red,
             int green,

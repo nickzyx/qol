@@ -1,5 +1,6 @@
 package megawalls.service;
 
+import java.util.Locale;
 import megawalls.domain.MegaWallsClass;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetworkPlayerInfo;
@@ -7,13 +8,13 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.util.IChatComponent;
 
-import java.util.Locale;
-
-final class MegaWallsClassResolver {
+public final class MegaWallsClassResolver {
 
     MegaWallsClass resolveLocalClass() {
         Minecraft minecraft = Minecraft.getMinecraft();
-        return minecraft == null || minecraft.thePlayer == null ? null : resolveMegaWallsClass(minecraft.thePlayer);
+        return minecraft.thePlayer == null
+            ? null
+            : resolveMegaWallsClass(minecraft.thePlayer);
     }
 
     MegaWallsClass resolveMegaWallsClass(EntityPlayer player) {
@@ -21,12 +22,24 @@ final class MegaWallsClassResolver {
             return null;
         }
 
-        Scoreboard scoreboard = player.worldObj == null ? null : player.worldObj.getScoreboard();
-        return resolveMegaWallsClass(getRenderedName(player), player.getName(), scoreboard);
+        Scoreboard scoreboard =
+            player.worldObj == null ? null : player.worldObj.getScoreboard();
+        return resolveMegaWallsClass(
+            getRenderedName(player),
+            player.getName(),
+            scoreboard
+        );
     }
 
-    MegaWallsClass resolveMegaWallsClass(String renderedName, String playerName, Scoreboard scoreboard) {
-        MegaWallsClass scoreboardClass = MegaWallsClass.fromScoreboard(scoreboard, playerName);
+    MegaWallsClass resolveMegaWallsClass(
+        String renderedName,
+        String playerName,
+        Scoreboard scoreboard
+    ) {
+        MegaWallsClass scoreboardClass = MegaWallsClass.fromScoreboard(
+            scoreboard,
+            playerName
+        );
         if (scoreboardClass != null) {
             return scoreboardClass;
         }
@@ -34,23 +47,29 @@ final class MegaWallsClassResolver {
         return MegaWallsClass.fromRenderedName(renderedName);
     }
 
-    String getRenderedName(EntityPlayer player) {
+    public String getRenderedName(EntityPlayer player) {
         Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft == null || minecraft.getNetHandler() == null || player == null) {
+        if (minecraft.getNetHandler() == null || player == null) {
             return player == null ? "" : player.getName();
         }
 
-        NetworkPlayerInfo playerInfo = minecraft.getNetHandler().getPlayerInfo(player.getUniqueID());
+        NetworkPlayerInfo playerInfo = minecraft
+            .getNetHandler()
+            .getPlayerInfo(player.getUniqueID());
         if (playerInfo != null && playerInfo.getDisplayName() != null) {
             return playerInfo.getDisplayName().getFormattedText();
         }
 
         IChatComponent displayName = player.getDisplayName();
-        return displayName == null ? player.getName() : displayName.getFormattedText();
+        return displayName == null
+            ? player.getName()
+            : displayName.getFormattedText();
     }
 
     String getRawText(IChatComponent chatComponent) {
-        return chatComponent == null ? "" : chatComponent.getUnformattedTextForChat();
+        return chatComponent == null
+            ? ""
+            : chatComponent.getUnformattedTextForChat();
     }
 
     String stripFormatting(String value) {
@@ -67,10 +86,13 @@ final class MegaWallsClassResolver {
         }
 
         String renderedName = getRenderedName(player).toUpperCase(Locale.ROOT);
-        return renderedName.contains("[ZOM]") || renderedName.contains("[僵尸]");
+        return renderedName.contains("[ZOM]");
     }
 
     boolean hasPhoenixIndicator(String renderedName) {
-        return MegaWallsClass.fromRenderedName(renderedName) == MegaWallsClass.PHOENIX;
+        return (
+            MegaWallsClass.fromRenderedName(renderedName) ==
+            MegaWallsClass.PHOENIX
+        );
     }
 }

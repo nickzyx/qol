@@ -17,14 +17,8 @@ import megawalls.util.ChatNotifier;
 
 public final class MegaWallsConfig extends Config {
 
-    @KeyBind(size = OptionSize.DUAL, name = "KeyBind", description = "Press this key to print tracked class energy information for nearby Mega Walls players.", category = "General", subcategory = "Energy Tracker")
+    @KeyBind(size = OptionSize.DUAL, name = "Announce Energy", description = "Press this key to send your current ability energy as a real chat message.", category = "General", subcategory = "Energy Announcer")
     public OneKeyBind energyReporterKeybind = new OneKeyBind();
-
-    @Switch(size = OptionSize.DUAL, name = "Show Hits Needed", description = "Include the number of melee or bow hits needed for a player to reach ability energy.", category = "General", subcategory = "Energy Tracker")
-    public boolean showHitsNeeded = false;
-
-    @Switch(size = OptionSize.DUAL, name = "Show Ability Name", description = "Include the tracked class ability name when reporting energy information.", category = "General", subcategory = "Energy Tracker")
-    public boolean showAbilityName = false;
 
     @Switch(size = OptionSize.DUAL, name = "Enabled", description = "Prevent accidental crafting table, chest, furnace, and hopper interactions.", category = "General", subcategory = "Interaction Guard")
     public boolean swordInteractionGuard = false;
@@ -137,9 +131,6 @@ public final class MegaWallsConfig extends Config {
     @Slider(name = "Compass Radius", description = "Adjust how far compass markers sit from the HUD center.", min = 10.0F, max = 160.0F, step = 1, category = "Experimental", subcategory = "Mobility HUD")
     public int mobilityCompassRadius = 55;
 
-    @Switch(size = OptionSize.DUAL, name = "Debug Sound Packets", description = "Print incoming sound packet names to chat for temporary detection testing.", category = "Experimental", subcategory = "Mobility Alert")
-    public boolean mobilityDebugSounds = false;
-
     @Slider(name = "Chat Print Interval", description = "Set the cooldown between repeated Mobility Alert chat messages.", min = 1.0F, max = 10.0F, step = 1, category = "General", subcategory = "Mobility Alert")
     public int mobilityAlertIntervalSeconds = 5;
 
@@ -157,6 +148,9 @@ public final class MegaWallsConfig extends Config {
 
     @Slider(name = "Snowman Opacity", description = "Adjust how visible transparent Snowman mobs are.", min = 10.0F, max = 90.0F, step = 5, category = "Render", subcategory = "Visuals")
     public int transparentSnowmenOpacity = 35;
+
+    @Switch(size = OptionSize.DUAL, name = "Developer Debug Logging", description = "Write detailed chat, sound, packet, scoreboard, tablist, and player snapshots to .minecraft/qol-debug.", category = "Experimental", subcategory = "Developer Debug")
+    public boolean developerDebugEnabled = false;
 
     private transient boolean phoenixTablistDisplayEnabled = true;
     private transient boolean diamondTablistDisplayEnabled = true;

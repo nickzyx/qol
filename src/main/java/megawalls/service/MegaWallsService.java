@@ -4,6 +4,8 @@ import megawalls.api.PlayerStateView;
 import megawalls.config.MegaWallsConfig;
 import megawalls.MegaWallsMod;
 import megawalls.domain.DiamondGear;
+import megawalls.render.NametagIconService;
+import megawalls.render.SnowmanTeamResolver;
 import megawalls.render.TransparentSnowmanRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
@@ -13,6 +15,7 @@ import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 
@@ -28,21 +31,26 @@ public final class MegaWallsService {
     private final PhoenixResurrectionRegistry phoenixResurrectionRegistry =
             new PhoenixResurrectionRegistry();
     private final MegaWallsContextService contextService = new MegaWallsContextService();
+    private final DeveloperDebugService debugService = new DeveloperDebugService();
     private final PlayerTrackingService playerTrackingService =
             new PlayerTrackingService(
                     trackedPlayerRegistry,
                     phoenixResurrectionRegistry,
                     classResolver,
-                    contextService
+                    contextService,
+                    debugService
             );
     private final MobilityAlertService mobilityAlertService =
-            new MobilityAlertService(classResolver, contextService);
+            new MobilityAlertService(classResolver, contextService, debugService);
     private final MobilityCompassRenderer mobilityCompassRenderer =
             new MobilityCompassRenderer();
     private final NametagIconService nametagIconService =
             new NametagIconService(classResolver, contextService);
-    private final PacketObservationService packetObservationService = new PacketObservationService(playerTrackingService);
+    private final PacketObservationService packetObservationService =
+            new PacketObservationService(playerTrackingService, debugService);
     private final EnergyReportService energyReportService = new EnergyReportService(classResolver);
+    private final InteractionGuardService interactionGuardService = new InteractionGuardService();
+    private final SnowmanTeamResolver snowmanTeamResolver = new SnowmanTeamResolver();
     private final TransparentSnowmanRenderer transparentSnowmanRenderer =
             new TransparentSnowmanRenderer();
 
@@ -81,7 +89,7 @@ public final class MegaWallsService {
         return playerTrackingService.queryPlayerState(playerId, profileName, renderedName);
     }
 
-    PlayerStateView queryNametagPlayerState(UUID playerId, String profileName, String renderedName) {
+    public PlayerStateView queryNametagPlayerState(UUID playerId, String profileName, String renderedName) {
         if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
             return inactivePlayerState(playerId, profileName);
         }
@@ -108,18 +116,23 @@ public final class MegaWallsService {
         }
 
         contextService.updateSidebarState(world, classResolver);
+        debugService.onClientTick(minecraft, contextService, classResolver);
 
         MegaWallsConfig config = MegaWallsMod.getConfig();
 
         if (!contextService.isInMegaWalls()) {
-            playerTrackingService.resetSnapshots();
+            if (!contextService.isDeathmatchActive()) {
+                playerTrackingService.resetSnapshots();
+            }
             mobilityAlertService.reset();
             nametagIconService.reset(minecraft);
             return;
         }
 
         if (!contextService.isTrackingActive()) {
-            playerTrackingService.resetSnapshots();
+            if (!contextService.isDeathmatchActive()) {
+                playerTrackingService.resetSnapshots();
+            }
             mobilityAlertService.reset();
             nametagIconService.reset(minecraft);
             return;
@@ -139,14 +152,20 @@ public final class MegaWallsService {
 
     @SubscribeEvent
     public void onChatReceived(ClientChatReceivedEvent event) {
+        String formattedMessage = event == null || event.message == null
+                ? ""
+                : event.message.getFormattedText();
+        String strippedMessage = event == null || event.message == null
+                ? ""
+                : event.message.getUnformattedTextForChat();
+        debugService.logChat(formattedMessage, strippedMessage);
+
         if (!contextService.isInMegaWalls()) {
             return;
         }
 
         contextService.observeChatMessage(
-                event == null || event.message == null
-                        ? ""
-                        : event.message.getUnformattedTextForChat(),
+                strippedMessage,
                 classResolver
         );
         playerTrackingService.onChatReceived(event);
@@ -187,7 +206,7 @@ public final class MegaWallsService {
 
     @SubscribeEvent
     public void onRenderLivingPre(RenderLivingEvent.Pre event) {
-        if (transparentSnowmanRenderer.isRenderingTransparentSnowman() || event == null) {
+        if (event == null) {
             return;
         }
 
@@ -200,16 +219,29 @@ public final class MegaWallsService {
                 config == null ||
                 !config.transparentSnowmen ||
                 !contextService.isInMegaWalls() ||
-                !contextService.isTrackingActive()
+                !contextService.isTrackingActive() ||
+                (
+                        !config.transparentSnowmenAllTeams &&
+                        !snowmanTeamResolver.isLocalTeamSnowman(
+                                (EntitySnowman) event.entity,
+                                contextService.getLocalTeamColor()
+                        )
+                )
         ) {
             return;
         }
 
-        transparentSnowmanRenderer.render(event, config.transparentSnowmenOpacity);
+        transparentSnowmanRenderer.beginRender(event, config.transparentSnowmenOpacity);
+    }
+
+    @SubscribeEvent
+    public void onRenderLivingPost(RenderLivingEvent.Post event) {
+        transparentSnowmanRenderer.finishRender(event);
     }
 
     @SubscribeEvent
     public void onPlaySound(PlaySoundEvent event) {
+        debugService.logSound(event);
         mobilityAlertService.onPlaySound(event);
 
         if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
@@ -219,15 +251,22 @@ public final class MegaWallsService {
         playerTrackingService.onPlaySound(event);
     }
 
-    public void observeTabProfile(UUID playerId, String profileName) {
-        if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
+    @SubscribeEvent
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        if (
+                event == null ||
+                event.action != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK ||
+                !contextService.isInMegaWalls() ||
+                !contextService.isTrackingActive()
+        ) {
             return;
         }
 
-        packetObservationService.observeTabProfile(playerId, profileName);
+        interactionGuardService.onPlayerInteract(event, MegaWallsMod.getConfig());
     }
 
     public void observeTabProfile(UUID playerId, String profileName, String renderedName) {
+        debugService.logTabProfilePacket(playerId, profileName, renderedName);
         if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
             return;
         }
@@ -236,6 +275,7 @@ public final class MegaWallsService {
     }
 
     public void observeEntityMetadata(int entityId, float health) {
+        debugService.logEntityMetadataPacket(entityId, health);
         if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
             return;
         }
@@ -244,6 +284,7 @@ public final class MegaWallsService {
     }
 
     public void observeEquipmentPacket(int entityId, int equipmentSlot, ItemStack itemStack) {
+        debugService.logEquipmentPacket(entityId, equipmentSlot, itemStack);
         if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
             return;
         }
@@ -252,6 +293,7 @@ public final class MegaWallsService {
     }
 
     public void observeEntityEffect(int entityId, int effectId, int durationTicks) {
+        debugService.logEntityEffectPacket(entityId, effectId, durationTicks);
         if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
             return;
         }
@@ -260,6 +302,7 @@ public final class MegaWallsService {
     }
 
     public void observeEntityEffectRemoved(int entityId, int effectId) {
+        debugService.logEntityEffectRemovedPacket(entityId, effectId);
         if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
             return;
         }
@@ -278,4 +321,5 @@ public final class MegaWallsService {
                 false
         );
     }
+
 }

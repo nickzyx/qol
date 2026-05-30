@@ -9,13 +9,14 @@ import java.util.UUID;
 final class PacketObservationService {
 
     private final PlayerTrackingService playerTrackingService;
+    private final DeveloperDebugService debugService;
 
-    PacketObservationService(PlayerTrackingService playerTrackingService) {
+    PacketObservationService(
+        PlayerTrackingService playerTrackingService,
+        DeveloperDebugService debugService
+    ) {
         this.playerTrackingService = playerTrackingService;
-    }
-
-    void observeTabProfile(UUID playerId, String profileName) {
-        observeTabProfile(playerId, profileName, null);
+        this.debugService = debugService;
     }
 
     void observeTabProfile(UUID playerId, String profileName, String renderedName) {
@@ -24,6 +25,7 @@ final class PacketObservationService {
 
     void observeEntityMetadata(int entityId, float health) {
         EntityPlayer player = resolvePlayerEntity(entityId);
+        debugService.logPacketResolution("entity-metadata", entityId, player);
         if (player != null) {
             playerTrackingService.observeEntityMetadata(player, health);
         }
@@ -31,6 +33,7 @@ final class PacketObservationService {
 
     void observeEquipmentPacket(int entityId, int equipmentSlot, ItemStack itemStack) {
         EntityPlayer player = resolvePlayerEntity(entityId);
+        debugService.logPacketResolution("equipment", entityId, player);
         if (player != null) {
             playerTrackingService.observeEquipmentPacket(player, equipmentSlot, itemStack);
         }
@@ -38,6 +41,7 @@ final class PacketObservationService {
 
     void observeEntityEffect(int entityId, int effectId, int durationTicks) {
         EntityPlayer player = resolvePlayerEntity(entityId);
+        debugService.logPacketResolution("entity-effect", entityId, player);
         if (player != null) {
             playerTrackingService.observeEntityEffect(player, effectId, durationTicks);
         }
@@ -45,6 +49,7 @@ final class PacketObservationService {
 
     void observeEntityEffectRemoved(int entityId, int effectId) {
         EntityPlayer player = resolvePlayerEntity(entityId);
+        debugService.logPacketResolution("entity-effect-removed", entityId, player);
         if (player != null) {
             playerTrackingService.observeEntityEffectRemoved(player, effectId);
         }

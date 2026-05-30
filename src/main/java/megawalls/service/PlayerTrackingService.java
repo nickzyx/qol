@@ -19,9 +19,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
-import net.minecraft.scoreboard.IScoreObjectiveCriteria;
-import net.minecraft.scoreboard.Score;
-import net.minecraft.scoreboard.ScoreObjective;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
@@ -42,6 +39,8 @@ final class PlayerTrackingService {
     private final PhoenixResurrectionRegistry phoenixResurrectionRegistry;
     private final MegaWallsClassResolver classResolver;
     private final MegaWallsContextService contextService;
+    private final DeveloperDebugService debugService;
+    private final PotionTrackingService potionTrackingService;
     private final Map<String, MegaWallsClass> killStrengthCandidates =
         new HashMap<String, MegaWallsClass>();
 
@@ -49,12 +48,18 @@ final class PlayerTrackingService {
         TrackedPlayerRegistry trackedPlayerRegistry,
         PhoenixResurrectionRegistry phoenixResurrectionRegistry,
         MegaWallsClassResolver classResolver,
-        MegaWallsContextService contextService
+        MegaWallsContextService contextService,
+        DeveloperDebugService debugService
     ) {
         this.trackedPlayerRegistry = trackedPlayerRegistry;
         this.phoenixResurrectionRegistry = phoenixResurrectionRegistry;
         this.classResolver = classResolver;
         this.contextService = contextService;
+        this.debugService = debugService;
+        this.potionTrackingService = new PotionTrackingService(
+            contextService,
+            debugService
+        );
     }
 
     PlayerStateView queryPlayerState(UUID playerId, String profileName) {
@@ -110,20 +115,18 @@ final class PlayerTrackingService {
         );
         refreshPotionLiveState(playerId, profileName, trackedPlayerState);
         refreshPhoenixTablistState(playerId, profileName, trackedPlayerState);
-        PhoenixResurrectionState phoenixState =
-            resolvePhoenixResurrectionState(trackedPlayerState, false);
         boolean phoenixTracked = trackedPlayerState.isPhoenixTracked();
-        if (!phoenixTracked) {
-            phoenixState = null;
-        }
 
         return new PlayerStateView(
             playerId,
             profileName,
             config.phoenixDetectorEnabled &&
                 isPhoenixVisible(config, nametagView) &&
-                phoenixTracked,
-            phoenixState == null || phoenixState.resurrectionAvailable,
+            phoenixTracked,
+            !phoenixTracked ||
+                phoenixResurrectionRegistry.isResurrectionAvailable(
+                    trackedPlayerState.profileName
+                ),
                 config.diamondDetectorEnabled &&
                 !nametagView &&
                 canUseDiamond(config) &&
@@ -329,7 +332,7 @@ final class PlayerTrackingService {
             classResolver.resolveMegaWallsClass(player)
         );
         observePhoenixRidingState(trackedPlayerState, player);
-        updatePotionState(trackedPlayerState, player, health);
+        potionTrackingService.updateLiveState(trackedPlayerState, player, health);
     }
 
     void observeEquipmentPacket(
@@ -440,9 +443,6 @@ final class PlayerTrackingService {
             minecraft.theWorld == null
                 ? null
                 : minecraft.theWorld.getScoreboard();
-        Map<String, Integer> tablistHealthScores = getTablistHealthScores(
-            scoreboard
-        );
         Collection<NetworkPlayerInfo> playerInfoMap = minecraft
             .getNetHandler()
             .getPlayerInfoMap();
@@ -471,9 +471,11 @@ final class PlayerTrackingService {
                 playerInfo.getDisplayName() == null
                     ? profileName
                     : playerInfo.getDisplayName().getFormattedText();
-            Integer tablistHealth = lookupTablistHealth(
-                tablistHealthScores,
-                profileName
+            EntityPlayer playerEntity = resolvePlayerEntity(playerId, profileName);
+            Integer tablistHealth = potionTrackingService.lookupHealth(
+                scoreboard,
+                profileName,
+                playerEntity
             );
             seedTablistState(
                 playerId,
@@ -481,11 +483,12 @@ final class PlayerTrackingService {
                 renderedName,
                 trackedPlayerState
             );
-            observePotionTablistState(trackedPlayerState, tablistHealth);
-            observePhoenixRidingState(
+            potionTrackingService.observeScoreboardHealth(
                 trackedPlayerState,
-                resolvePlayerEntity(playerId, profileName)
+                tablistHealth,
+                playerEntity != null
             );
+            observePhoenixRidingState(trackedPlayerState, playerEntity);
         }
     }
 
@@ -512,7 +515,7 @@ final class PlayerTrackingService {
         );
         observePhoenixRidingState(trackedPlayerState, player);
         recordObservedDiamonds(trackedPlayerState, player);
-        updatePotionState(trackedPlayerState, player);
+        potionTrackingService.updateLiveState(trackedPlayerState, player);
         updateStrengthState(trackedPlayerState, player);
     }
 
@@ -714,108 +717,6 @@ final class PlayerTrackingService {
                     " was seen with diamond " +
                     observedDiamond.name().toLowerCase(Locale.ROOT) +
                     '.'
-            );
-        }
-    }
-
-    private void updatePotionState(
-        TrackedPlayerState trackedPlayerState,
-        EntityPlayer player
-    ) {
-        updatePotionState(trackedPlayerState, player, player.getHealth());
-    }
-
-    private void updatePotionState(
-        TrackedPlayerState trackedPlayerState,
-        EntityPlayer player,
-        float currentHealth
-    ) {
-        MegaWallsConfig config = MegaWallsMod.getConfig();
-        MegaWallsClass megaWallsClass = trackedPlayerState.megaWallsClass;
-        if (
-            config == null ||
-            !config.potionDetectorEnabled ||
-            !canUsePotion(config) ||
-            megaWallsClass == null ||
-            megaWallsClass.getPotionCount() < 0
-        ) {
-            trackedPlayerState.resetPotions();
-            return;
-        }
-
-        boolean alive = !player.isDead && currentHealth > 0.0F;
-
-        if (!ensurePotionTrackingState(trackedPlayerState, megaWallsClass)) {
-            return;
-        }
-
-        if (!trackedPlayerState.hasPotionSample) {
-            trackedPlayerState.lastHealth = currentHealth;
-            trackedPlayerState.hasPotionSample = true;
-            trackedPlayerState.wasAlive = alive;
-            return;
-        }
-
-        if (!trackedPlayerState.wasAlive && alive) {
-            trackedPlayerState.lastHealth = currentHealth;
-            trackedPlayerState.wasAlive = alive;
-            return;
-        }
-
-        trackedPlayerState.lastHealth = currentHealth;
-        trackedPlayerState.wasAlive = alive;
-    }
-
-    private boolean ensurePotionTrackingState(
-        TrackedPlayerState trackedPlayerState,
-        MegaWallsClass megaWallsClass
-    ) {
-        if (
-            trackedPlayerState == null ||
-            megaWallsClass == null ||
-            megaWallsClass.getPotionCount() < 0
-        ) {
-            return false;
-        }
-
-        if (trackedPlayerState.potionClass != megaWallsClass) {
-            trackedPlayerState.potionClass = megaWallsClass;
-            trackedPlayerState.remainingPotions =
-                megaWallsClass.getPotionCount();
-        }
-        if (trackedPlayerState.remainingPotions < 0) {
-            trackedPlayerState.remainingPotions =
-                megaWallsClass.getPotionCount();
-        }
-
-        return true;
-    }
-
-    private void recordPotionUse(
-        TrackedPlayerState trackedPlayerState,
-        MegaWallsConfig config
-    ) {
-        if (
-            trackedPlayerState == null ||
-            trackedPlayerState.remainingPotions <= 0
-        ) {
-            return;
-        }
-
-        long now = System.currentTimeMillis();
-        trackedPlayerState.remainingPotions--;
-        trackedPlayerState.lastPotionUseAt = now;
-        if (config.potionDebug) {
-            ChatNotifier.info(
-                aquaName(
-                    trackedPlayerState.profileName,
-                    EnumChatFormatting.WHITE
-                ) +
-                    " used a healing potion. Remaining: " +
-                    redValue(
-                        trackedPlayerState.remainingPotions,
-                        EnumChatFormatting.WHITE
-                    )
             );
         }
     }
@@ -1115,111 +1016,6 @@ final class PlayerTrackingService {
         );
     }
 
-    private Map<String, Integer> getTablistHealthScores(Scoreboard scoreboard) {
-        Map<String, Integer> scoresByPlayer = new HashMap<String, Integer>();
-        if (scoreboard == null) {
-            return scoresByPlayer;
-        }
-
-        ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(2);
-        if (objective == null || objective.getCriteria() == null) {
-            return scoresByPlayer;
-        }
-
-        if (
-            objective.getCriteria().getRenderType() !=
-            IScoreObjectiveCriteria.EnumRenderType.HEARTS
-        ) {
-            return scoresByPlayer;
-        }
-
-        Collection<Score> sortedScores = scoreboard.getSortedScores(objective);
-        if (sortedScores == null || sortedScores.isEmpty()) {
-            return scoresByPlayer;
-        }
-
-        for (Score score : sortedScores) {
-            if (
-                score == null ||
-                score.getPlayerName() == null ||
-                score.getPlayerName().startsWith("#")
-            ) {
-                continue;
-            }
-
-            String normalizedName =
-                TrackedPlayerState.normalizeKey(score.getPlayerName());
-            if (normalizedName != null) {
-                scoresByPlayer.put(
-                    normalizedName,
-                    Integer.valueOf(score.getScorePoints())
-                );
-            }
-        }
-
-        return scoresByPlayer;
-    }
-
-    private Integer lookupTablistHealth(
-        Map<String, Integer> tablistHealthScores,
-        String profileName
-    ) {
-        if (
-            tablistHealthScores == null ||
-            tablistHealthScores.isEmpty() ||
-            profileName == null ||
-            profileName.isEmpty()
-        ) {
-            return null;
-        }
-
-        return tablistHealthScores.get(
-            TrackedPlayerState.normalizeKey(profileName)
-        );
-    }
-
-    private void observePotionTablistState(
-        TrackedPlayerState trackedPlayerState,
-        Integer tablistHealth
-    ) {
-        MegaWallsConfig config = MegaWallsMod.getConfig();
-        if (
-            trackedPlayerState == null ||
-            tablistHealth == null ||
-            config == null ||
-            !config.potionDetectorEnabled ||
-            !canUsePotion(config)
-        ) {
-            return;
-        }
-
-        int currentTablistHealth = tablistHealth.intValue();
-        MegaWallsClass megaWallsClass = trackedPlayerState.megaWallsClass;
-        if (!ensurePotionTrackingState(trackedPlayerState, megaWallsClass)) {
-            trackedPlayerState.lastPotionTablistHealth = currentTablistHealth;
-            return;
-        }
-
-        if (
-            trackedPlayerState.lastPotionTablistHealth != Integer.MIN_VALUE &&
-            trackedPlayerState.lastPotionTablistHealth > 0 &&
-            trackedPlayerState.remainingPotions > 0
-        ) {
-            int healthGain =
-                currentTablistHealth - trackedPlayerState.lastPotionTablistHealth;
-            if (isPotionHealthGain(healthGain)) {
-                recordPotionUse(trackedPlayerState, config);
-            }
-        }
-
-        trackedPlayerState.lastPotionTablistHealth = currentTablistHealth;
-    }
-
-    private boolean isPotionHealthGain(int healthGain) {
-        return (healthGain >= 15 && healthGain <= 17) ||
-            (healthGain >= 19 && healthGain <= 21);
-    }
-
     private boolean canUseDiamond(MegaWallsConfig config) {
         return (
             config != null &&
@@ -1259,7 +1055,7 @@ final class PlayerTrackingService {
             trackedPlayerState,
             classResolver.resolveMegaWallsClass(player)
         );
-        updatePotionState(trackedPlayerState, player);
+        potionTrackingService.updateLiveState(trackedPlayerState, player);
     }
 
     private void refreshPhoenixTablistState(
@@ -1293,16 +1089,11 @@ final class PlayerTrackingService {
             return;
         }
 
-        PhoenixResurrectionState phoenixState =
-            resolvePhoenixResurrectionState(trackedPlayerState, true);
-        if (
-            phoenixState == null ||
-            !phoenixState.resurrectionAvailable
-        ) {
+        if (!phoenixResurrectionRegistry.markResurrectionUnavailable(
+            trackedPlayerState.profileName
+        )) {
             return;
         }
-
-        phoenixState.resurrectionAvailable = false;
 
         if (config.phoenixAutoTalk) {
             String playerName = player.getName();
@@ -1318,31 +1109,6 @@ final class PlayerTrackingService {
                 );
             }
         }
-    }
-
-    private PhoenixResurrectionState resolvePhoenixResurrectionState(
-        TrackedPlayerState trackedPlayerState,
-        boolean create
-    ) {
-        if (trackedPlayerState == null) {
-            return null;
-        }
-
-        PhoenixResurrectionState phoenixState =
-            phoenixResurrectionRegistry.resolveState(
-                trackedPlayerState.profileName,
-                false
-            );
-        if (phoenixState != null || !create || trackedPlayerState.isPhoenixTracked()) {
-            return phoenixState != null
-                ? phoenixState
-                : phoenixResurrectionRegistry.resolveState(
-                    trackedPlayerState.profileName,
-                    true
-                );
-        }
-
-        return null;
     }
 
     private String aquaName(String playerName, EnumChatFormatting trailingColor) {

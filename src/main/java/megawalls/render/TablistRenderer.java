@@ -1,5 +1,7 @@
 package megawalls.render;
 
+import java.util.List;
+import java.util.UUID;
 import megawalls.api.PlayerStateView;
 import megawalls.api.TablistBridge;
 import megawalls.domain.DiamondGear;
@@ -14,9 +16,6 @@ import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
-import java.util.List;
-import java.util.UUID;
-
 public final class TablistRenderer {
 
     private static final int ICON_WIDTH = 9;
@@ -30,8 +29,14 @@ public final class TablistRenderer {
 
     private TablistRenderer() {}
 
-    public static String decorateName(String renderedName, NetworkPlayerInfo playerInfo) {
-        PlayerStateView playerStateView = queryPlayerState(playerInfo, renderedName);
+    public static String decorateName(
+        String renderedName,
+        NetworkPlayerInfo playerInfo
+    ) {
+        PlayerStateView playerStateView = queryPlayerState(
+            playerInfo,
+            renderedName
+        );
         if (renderedName == null || playerStateView == null) {
             return renderedName;
         }
@@ -46,7 +51,10 @@ public final class TablistRenderer {
         return decoratedName.toString();
     }
 
-    private static void appendPhoenixMarker(StringBuilder decoratedName, PlayerStateView playerStateView) {
+    private static void appendPhoenixMarker(
+        StringBuilder decoratedName,
+        PlayerStateView playerStateView
+    ) {
         if (!playerStateView.isPhoenixClass()) {
             return;
         }
@@ -58,19 +66,26 @@ public final class TablistRenderer {
         }
     }
 
-    private static void appendIconSpace(StringBuilder decoratedName, List<DiamondGear> diamondGear) {
+    private static void appendIconSpace(
+        StringBuilder decoratedName,
+        List<DiamondGear> diamondGear
+    ) {
         if (diamondGear == null || diamondGear.isEmpty()) {
             return;
         }
 
-        int spacesNeeded = ((diamondGear.size() * ICON_WIDTH) + SPACE_WIDTH - 1) / SPACE_WIDTH;
+        int spacesNeeded =
+            ((diamondGear.size() * ICON_WIDTH) + SPACE_WIDTH - 1) / SPACE_WIDTH;
         decoratedName.append(' ');
         for (int index = 0; index < spacesNeeded; index++) {
             decoratedName.append(' ');
         }
     }
 
-    private static void appendPotionIconSpace(StringBuilder decoratedName, PlayerStateView playerStateView) {
+    private static void appendPotionIconSpace(
+        StringBuilder decoratedName,
+        PlayerStateView playerStateView
+    ) {
         if (playerStateView.getPotionCount() < 0) {
             return;
         }
@@ -95,8 +110,16 @@ public final class TablistRenderer {
         return stripped.toString();
     }
 
-    public static void renderDiamondIcons(NetworkPlayerInfo playerInfo, String renderedName, int x, int y) {
-        PlayerStateView playerStateView = queryPlayerState(playerInfo, renderedName);
+    public static void renderDiamondIcons(
+        NetworkPlayerInfo playerInfo,
+        String renderedName,
+        int x,
+        int y
+    ) {
+        PlayerStateView playerStateView = queryPlayerState(
+            playerInfo,
+            renderedName
+        );
         if (renderedName == null || playerStateView == null) {
             return;
         }
@@ -112,11 +135,20 @@ public final class TablistRenderer {
         }
 
         Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft == null || minecraft.fontRendererObj == null || minecraft.getRenderItem() == null) {
+        if (
+            minecraft == null ||
+            minecraft.fontRendererObj == null ||
+            minecraft.getRenderItem() == null
+        ) {
             return;
         }
 
-        int iconX = x + minecraft.fontRendererObj.getStringWidth(getIconPrefix(renderedName, playerStateView)) + 2;
+        int iconX =
+            x +
+            minecraft.fontRendererObj.getStringWidth(
+                getIconPrefix(renderedName, playerStateView)
+            ) +
+            2;
         int iconY = y;
         RenderItem renderItem = minecraft.getRenderItem();
 
@@ -127,10 +159,10 @@ public final class TablistRenderer {
         int drawnIcons = 0;
         if (playerStateView.isPhoenixClass()) {
             drawPhoenixHeart(
-                    minecraft,
-                    iconX,
-                    iconY,
-                    playerStateView.isPhoenixResurrectionAvailable()
+                minecraft,
+                iconX,
+                iconY,
+                playerStateView.isPhoenixResurrectionAvailable()
             );
             drawnIcons++;
         }
@@ -143,9 +175,17 @@ public final class TablistRenderer {
                 }
 
                 GlStateManager.pushMatrix();
-                GlStateManager.translate(iconX + (drawnIcons * ICON_WIDTH), iconY, 0.0F);
+                GlStateManager.translate(
+                    iconX + (drawnIcons * ICON_WIDTH),
+                    iconY,
+                    0.0F
+                );
                 GlStateManager.scale(0.5F, 0.5F, 1.0F);
-                renderItem.renderItemAndEffectIntoGUI(new ItemStack(item), 0, 0);
+                renderItem.renderItemAndEffectIntoGUI(
+                    new ItemStack(item),
+                    0,
+                    0
+                );
                 GlStateManager.popMatrix();
                 drawnIcons++;
             }
@@ -156,7 +196,11 @@ public final class TablistRenderer {
             GlStateManager.pushMatrix();
             GlStateManager.translate(potionX, iconY, 0.0F);
             GlStateManager.scale(0.5F, 0.5F, 1.0F);
-            renderItem.renderItemAndEffectIntoGUI(new ItemStack(Items.potionitem, 1, POTION_DAMAGE), 0, 0);
+            renderItem.renderItemAndEffectIntoGUI(
+                new ItemStack(Items.potionitem, 1, POTION_DAMAGE),
+                0,
+                0
+            );
             GlStateManager.popMatrix();
 
             RenderHelper.disableStandardItemLighting();
@@ -164,10 +208,10 @@ public final class TablistRenderer {
             GlStateManager.pushMatrix();
             GlStateManager.scale(0.75F, 0.75F, 1.0F);
             minecraft.fontRendererObj.drawStringWithShadow(
-                    Integer.toString(potionCount),
-                    (potionX + 9) / 0.75F,
-                    (iconY + 2) / 0.75F,
-                    0xFF5555
+                Integer.toString(potionCount),
+                (potionX + 9) / 0.75F,
+                (iconY + 2) / 0.75F,
+                0xFF5555
             );
             GlStateManager.popMatrix();
         }
@@ -178,7 +222,10 @@ public final class TablistRenderer {
         GlStateManager.popMatrix();
     }
 
-    private static String getIconPrefix(String renderedName, PlayerStateView playerStateView) {
+    private static String getIconPrefix(
+        String renderedName,
+        PlayerStateView playerStateView
+    ) {
         return stripIconReservation(renderedName);
     }
 
@@ -210,17 +257,22 @@ public final class TablistRenderer {
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         textureManager.bindTexture(Gui.icons);
         new Gui().drawTexturedModalRect(
-                x,
-                y,
-                resurrectionAvailable ? HEART_FULL_TEXTURE_X : HEART_EMPTY_TEXTURE_X,
-                HEART_TEXTURE_Y,
-                PHOENIX_ICON_WIDTH,
-                PHOENIX_ICON_WIDTH
+            x,
+            y,
+            resurrectionAvailable
+                ? HEART_FULL_TEXTURE_X
+                : HEART_EMPTY_TEXTURE_X,
+            HEART_TEXTURE_Y,
+            PHOENIX_ICON_WIDTH,
+            PHOENIX_ICON_WIDTH
         );
         RenderHelper.enableGUIStandardItemLighting();
     }
 
-    private static PlayerStateView queryPlayerState(NetworkPlayerInfo playerInfo, String renderedName) {
+    private static PlayerStateView queryPlayerState(
+        NetworkPlayerInfo playerInfo,
+        String renderedName
+    ) {
         if (playerInfo == null || playerInfo.getGameProfile() == null) {
             return null;
         }
@@ -228,7 +280,11 @@ public final class TablistRenderer {
         try {
             UUID playerId = playerInfo.getGameProfile().getId();
             String profileName = playerInfo.getGameProfile().getName();
-            return TablistBridge.queryPlayerState(playerId, profileName, renderedName);
+            return TablistBridge.queryPlayerState(
+                playerId,
+                profileName,
+                renderedName
+            );
         } catch (Exception ignored) {
             return null;
         }

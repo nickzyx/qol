@@ -53,12 +53,6 @@ public final class MobilityLeapAlertHud extends SingleTextHud {
             scale = 1.0F;
         }
 
-        float width = fontRenderer.getStringWidth(message) * scale;
-        float height = fontRenderer.FONT_HEIGHT * scale;
-        if (position != null) {
-            position.updateSizePosition(width, height);
-        }
-
         float x = position == null ? 0.0F : position.getX();
         float y = position == null ? 0.0F : position.getY();
         GlStateManager.pushMatrix();

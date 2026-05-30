@@ -56,6 +56,10 @@ final class TrackedPlayerRegistry {
             trackedPlayerState.strengthExpiresAt = 0L;
             trackedPlayerState.lastStrengthTriggerAt = 0L;
             trackedPlayerState.lastPotionTablistHealth = Integer.MIN_VALUE;
+            trackedPlayerState.maxPotionTablistHealth = Integer.MIN_VALUE;
+            trackedPlayerState.potionEntityLoaded = false;
+            trackedPlayerState.potionRespawnCandidate = false;
+            trackedPlayerState.potionLowHealthSeen = false;
             trackedPlayerState.lastPotionUseAt = 0L;
         }
     }
@@ -74,6 +78,9 @@ final class TrackedPlayerRegistry {
 
         primaryState.bindIdentity(secondaryState.sessionUuid, secondaryState.profileName);
         primaryState.bindRenderedName(secondaryState.lastRenderedName);
+        if (primaryState.teamColor == '\0') {
+            primaryState.teamColor = secondaryState.teamColor;
+        }
         if (primaryState.megaWallsClass == null || secondaryState.megaWallsClass == MegaWallsClass.PHOENIX) {
             primaryState.megaWallsClass =
                     secondaryState.megaWallsClass == null ? primaryState.megaWallsClass : secondaryState.megaWallsClass;
@@ -84,6 +91,13 @@ final class TrackedPlayerRegistry {
                 secondaryState.lastPotionTablistHealth != Integer.MIN_VALUE
                         ? secondaryState.lastPotionTablistHealth
                         : primaryState.lastPotionTablistHealth;
+        primaryState.maxPotionTablistHealth = Math.max(
+                primaryState.maxPotionTablistHealth,
+                secondaryState.maxPotionTablistHealth
+        );
+        primaryState.potionRespawnCandidate |= secondaryState.potionRespawnCandidate;
+        primaryState.potionLowHealthSeen |= secondaryState.potionLowHealthSeen;
+        primaryState.potionEntityLoaded |= secondaryState.potionEntityLoaded;
         primaryState.phoenixIndicatorSeen |= secondaryState.phoenixIndicatorSeen;
         primaryState.lastPotionUseAt = Math.max(primaryState.lastPotionUseAt, secondaryState.lastPotionUseAt);
         primaryState.strengthExpiresAt = Math.max(primaryState.strengthExpiresAt, secondaryState.strengthExpiresAt);
@@ -139,6 +153,10 @@ final class TrackedPlayerRegistry {
         targetState.hasPotionSample = sourceState.hasPotionSample;
         targetState.lastHealth = sourceState.lastHealth;
         targetState.wasAlive = sourceState.wasAlive;
+        targetState.maxPotionTablistHealth = sourceState.maxPotionTablistHealth;
+        targetState.potionEntityLoaded = sourceState.potionEntityLoaded;
+        targetState.potionRespawnCandidate = sourceState.potionRespawnCandidate;
+        targetState.potionLowHealthSeen = sourceState.potionLowHealthSeen;
     }
 
     private LinkedHashSet<TrackedPlayerState> snapshotStates() {

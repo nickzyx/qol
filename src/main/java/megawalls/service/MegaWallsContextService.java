@@ -13,16 +13,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-final class MegaWallsContextService {
-
-    private static final String DEATHMATCH_START_MESSAGE =
-            "All withers are dead! 1 second until deathmatch!";
+public final class MegaWallsContextService {
 
     private WorldClient trackedWorld;
     private boolean inMegaWalls;
     private boolean trackingActive;
     private boolean deathmatchActive;
     private char localTeamColor;
+    private boolean redWitherDead;
+    private boolean greenWitherDead;
+    private boolean blueWitherDead;
+    private boolean yellowWitherDead;
 
     boolean syncWorld(WorldClient world) {
         if (world == trackedWorld) {
@@ -34,6 +35,7 @@ final class MegaWallsContextService {
         trackingActive = false;
         deathmatchActive = false;
         localTeamColor = '\0';
+        clearTeamWitherState();
         return true;
     }
 
@@ -43,6 +45,7 @@ final class MegaWallsContextService {
             trackingActive = false;
             deathmatchActive = false;
             localTeamColor = '\0';
+            clearTeamWitherState();
             return;
         }
 
@@ -64,11 +67,13 @@ final class MegaWallsContextService {
         boolean megaWallsSidebar = upperSidebarText.contains("MEGA WALLS");
         boolean gameSidebar = megaWallsSidebar;
         boolean lobbySidebar = normalized.contains("WINS");
+        boolean witherSidebar = sidebarText.contains("Wither");
         if (lobbySidebar) {
             inMegaWalls = false;
             trackingActive = false;
             deathmatchActive = false;
             localTeamColor = '\0';
+            clearTeamWitherState();
             return;
         }
 
@@ -76,18 +81,20 @@ final class MegaWallsContextService {
         if (gameSidebar) {
             trackingActive = true;
             localTeamColor = getLastColorCode(formattedSidebarTitle);
+            deathmatchActive = !witherSidebar;
+            updateTeamWitherState(sidebarLines, classResolver);
         }
     }
 
-    boolean isInMegaWalls() {
+    public boolean isInMegaWalls() {
         return inMegaWalls;
     }
 
-    boolean isDeathmatchActive() {
+    public boolean isDeathmatchActive() {
         return deathmatchActive;
     }
 
-    boolean isTrackingActive() {
+    public boolean isTrackingActive() {
         return trackingActive;
     }
 
@@ -95,17 +102,23 @@ final class MegaWallsContextService {
         return localTeamColor;
     }
 
-    void observeChatMessage(String message, MegaWallsClassResolver classResolver) {
-        if (message == null || message.isEmpty()) {
-            return;
+    boolean isTeamWitherDead(char teamColor) {
+        switch (Character.toLowerCase(teamColor)) {
+            case 'c':
+                return redWitherDead;
+            case 'a':
+                return greenWitherDead;
+            case '9':
+                return blueWitherDead;
+            case 'e':
+                return yellowWitherDead;
+            default:
+                return false;
         }
+    }
 
-        String strippedMessage = classResolver == null
-                ? message
-                : classResolver.stripFormatting(message);
-        if (DEATHMATCH_START_MESSAGE.equals(strippedMessage)) {
-            deathmatchActive = true;
-        }
+    void observeChatMessage(String message, MegaWallsClassResolver classResolver) {
+        // Deathmatch is inferred from the active sidebar instead.
     }
 
     private List<String> getSidebarLines(Scoreboard scoreboard) {
@@ -137,6 +150,68 @@ final class MegaWallsContextService {
             lines.add(ScorePlayerTeam.formatPlayerName(team, score.getPlayerName()));
         }
         return lines;
+    }
+
+    private void updateTeamWitherState(
+        List<String> sidebarLines,
+        MegaWallsClassResolver classResolver
+    ) {
+        clearTeamWitherState();
+        for (String sidebarLine : sidebarLines) {
+            String normalizedLine = classResolver
+                .stripFormatting(sidebarLine)
+                .replace("?", "")
+                .toUpperCase(Locale.ROOT);
+            observeTeamSidebarLine(normalizedLine, "[R]", 'c');
+            observeTeamSidebarLine(normalizedLine, "[G]", 'a');
+            observeTeamSidebarLine(normalizedLine, "[B]", '9');
+            observeTeamSidebarLine(normalizedLine, "[Y]", 'e');
+        }
+    }
+
+    private void observeTeamSidebarLine(
+        String normalizedLine,
+        String teamToken,
+        char teamColor
+    ) {
+        if (normalizedLine == null || !normalizedLine.contains(teamToken)) {
+            return;
+        }
+
+        if (normalizedLine.contains("WITHER")) {
+            setTeamWitherDead(teamColor, false);
+            return;
+        }
+
+        if (normalizedLine.contains("PLAYERS")) {
+            setTeamWitherDead(teamColor, true);
+        }
+    }
+
+    private void setTeamWitherDead(char teamColor, boolean witherDead) {
+        switch (Character.toLowerCase(teamColor)) {
+            case 'c':
+                redWitherDead = witherDead;
+                break;
+            case 'a':
+                greenWitherDead = witherDead;
+                break;
+            case '9':
+                blueWitherDead = witherDead;
+                break;
+            case 'e':
+                yellowWitherDead = witherDead;
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void clearTeamWitherState() {
+        redWitherDead = false;
+        greenWitherDead = false;
+        blueWitherDead = false;
+        yellowWitherDead = false;
     }
 
     private char getLastColorCode(String value) {
