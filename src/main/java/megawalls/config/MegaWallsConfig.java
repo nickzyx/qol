@@ -303,7 +303,7 @@ public final class MegaWallsConfig extends Config {
         category = "General",
         subcategory = "Mobility Alert"
     )
-    public boolean mobilityChatNotification = true;
+    public boolean mobilityChatNotification = false;
 
     @Switch(
         size = OptionSize.DUAL,
@@ -312,7 +312,7 @@ public final class MegaWallsConfig extends Config {
         category = "Experimental",
         subcategory = "Mobility Alert"
     )
-    public boolean mobilityLeapGuiAlert = true;
+    public boolean mobilityLeapGuiAlert = false;
 
     @HUD(
         name = "Leap Alert HUD",
@@ -329,7 +329,7 @@ public final class MegaWallsConfig extends Config {
         category = "Experimental",
         subcategory = "Mobility HUD"
     )
-    public boolean mobilityCompassHud = true;
+    public boolean mobilityCompassHud = false;
 
     @Slider(
         name = "Compass X",
