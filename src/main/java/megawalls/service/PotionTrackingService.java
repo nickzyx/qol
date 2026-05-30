@@ -16,7 +16,7 @@ final class PotionTrackingService {
     private static final int RESPAWN_LOW_HEALTH_THRESHOLD = 2;
     private static final long HEALTH_BASELINE_GRACE_MS = 5000L;
     private static final long HEALTH_MISSING_LOG_INTERVAL_MS = 5000L;
-    private static final int SIX_HEART_PARTIAL_MIN_GAIN = 9;
+    private static final int SIX_HEART_PARTIAL_MIN_GAIN = 10;
     private static final int TEN_HEART_ONE_POT_MIN_GAIN = 12;
     private static final int MIN_BURST_HEAL_GAIN = 3;
     private static final long HEAL_BURST_WINDOW_MS = 900L;

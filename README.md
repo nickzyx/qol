@@ -55,6 +55,10 @@ Renders ally Snowman mobs translucently, with an option to apply the render to a
 
 ![Transparent Snowmen example](examples/snowman_example.gif)
 
+### Auto Update
+
+Checks GitHub releases for newer versions and links to the releases page when an update is available.
+
 ---
 
 ## Experimental
@@ -92,6 +96,7 @@ Most modules are disabled by default and can be enabled independently in OneConf
 - `Diamond Tracker`: Enables non-kit diamond tracking, chat notifications, and deathmatch-only mode.
 - `Strength Tracker`: Enables strength detection, Zombie strength detection, repeated alert behavior, and deathmatch-only mode.
 - `Mobility Alert`: Enables enemy Spider and Enderman range alerts, chat notifications, chat interval, keybind toggle, and deathmatch-only mode.
+- `Auto Update`: Checks GitHub releases for newer versions and links to the releases page when an update is available.
 
 ### Render
 
@@ -106,8 +111,8 @@ Phoenix nametag hearts are green when resurrection is available and red when it 
 ### Experimental
 
 - `Potion Tracker`: Enables potion tracking, tablist display, nametag display, nametag color, chat notifications, and deathmatch-only mode.
-- `Mobility Alert`: Enables the Spider Leap GUI alert, draggable Leap Alert HUD, sound packet debug output, and the Mobility HUD compass.
-- `Mobility HUD`: Controls the experimental compass HUD toggle, position, and marker radius.
+- `Mobility Alert`: Enables the Spider Leap alert and HUD. Reposition using OneConfig `Edit HUD` button. 
+- `Mobility HUD`: Controls the compass HUD toggle, position, and marker radius.
 
 ### Development
 > [!NOTE]

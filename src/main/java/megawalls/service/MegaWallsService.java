@@ -53,6 +53,7 @@ public final class MegaWallsService {
     private final SnowmanTeamResolver snowmanTeamResolver = new SnowmanTeamResolver();
     private final TransparentSnowmanRenderer transparentSnowmanRenderer =
             new TransparentSnowmanRenderer();
+    private final UpdateCheckerService updateCheckerService = new UpdateCheckerService();
 
     private MegaWallsService() {}
 
@@ -119,6 +120,7 @@ public final class MegaWallsService {
         debugService.onClientTick(minecraft, contextService, classResolver);
 
         MegaWallsConfig config = MegaWallsMod.getConfig();
+        updateCheckerService.onClientTick(minecraft, config);
 
         if (!contextService.isInMegaWalls()) {
             if (!contextService.isDeathmatchActive()) {

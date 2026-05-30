@@ -3,6 +3,7 @@ package megawalls.util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatStyle;
+import net.minecraft.event.ClickEvent;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IChatComponent;
 
@@ -20,6 +21,19 @@ public final class ChatNotifier {
 
     public static void warn(String message) {
         send(message, EnumChatFormatting.RED);
+    }
+
+    public static void link(String message, String url) {
+        IChatComponent component = createPrefixedMessage();
+        ChatComponentText link = new ChatComponentText(message);
+        ChatStyle style = link.getChatStyle();
+        style.setColor(EnumChatFormatting.AQUA);
+        style.setUnderlined(true);
+        style.setChatClickEvent(
+            new ClickEvent(ClickEvent.Action.OPEN_URL, url)
+        );
+        component.appendSibling(link);
+        send(component);
     }
 
     public static void toggle(String label, boolean enabled) {

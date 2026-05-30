@@ -2,11 +2,10 @@ package megawalls.render;
 
 import cc.polyfrost.oneconfig.config.annotations.Exclude;
 import cc.polyfrost.oneconfig.hud.SingleTextHud;
+import cc.polyfrost.oneconfig.libs.universal.UMatrixStack;
 import megawalls.MegaWallsMod;
 import megawalls.config.MegaWallsConfig;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.renderer.GlStateManager;
 
 public final class MobilityLeapAlertHud extends SingleTextHud {
 
@@ -39,27 +38,13 @@ public final class MobilityLeapAlertHud extends SingleTextHud {
     public void renderActive(Minecraft minecraft, MegaWallsConfig config) {
         if (
             minecraft == null ||
-            minecraft.fontRendererObj == null ||
             config == null ||
-            !config.mobilityLeapGuiAlert ||
-            !isAlertVisible()
+            !config.mobilityLeapGuiAlert
         ) {
             return;
         }
 
-        FontRenderer fontRenderer = minecraft.fontRendererObj;
-        float scale = getScale();
-        if (scale <= 0.0F) {
-            scale = 1.0F;
-        }
-
-        float x = position == null ? 0.0F : position.getX();
-        float y = position == null ? 0.0F : position.getY();
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(x, y, 0.0F);
-        GlStateManager.scale(scale, scale, 1.0F);
-        fontRenderer.drawStringWithShadow(message, 0.0F, 0.0F, 0xFF5555);
-        GlStateManager.popMatrix();
+        drawAll(new UMatrixStack(), false);
     }
 
     @Override
@@ -77,7 +62,11 @@ public final class MobilityLeapAlertHud extends SingleTextHud {
 
     @Override
     protected boolean shouldShow() {
-        return false;
+        MegaWallsConfig config = MegaWallsMod.getConfig();
+        return config != null &&
+            config.mobilityLeapGuiAlert &&
+            isAlertVisible() &&
+            super.shouldShow();
     }
 
     private boolean isAlertVisible() {
