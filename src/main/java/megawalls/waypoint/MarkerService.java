@@ -3,6 +3,7 @@ package megawalls.waypoint;
 import java.util.List;
 import megawalls.config.MegaWallsConfig;
 import megawalls.service.DeveloperDebugService;
+import megawalls.util.MinecraftClient;
 import megawalls.waypoint.sync.MarkerSyncService;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
@@ -25,8 +26,8 @@ public final class MarkerService {
     private long pendingPlayerTargetBroadcastAt;
 
     public void pingLookedAt(MegaWallsConfig config) {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft == null || minecraft.thePlayer == null) {
+        Minecraft minecraft = MinecraftClient.withPlayer();
+        if (minecraft == null) {
             return;
         }
 
@@ -58,8 +59,8 @@ public final class MarkerService {
     }
 
     public void addWaypoint(int x, int y, int z) {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft == null || minecraft.thePlayer == null) {
+        Minecraft minecraft = MinecraftClient.withPlayer();
+        if (minecraft == null) {
             return;
         }
 
@@ -79,7 +80,7 @@ public final class MarkerService {
     }
 
     public void onClientTick(Minecraft minecraft) {
-        if (minecraft == null || minecraft.thePlayer == null) {
+        if (!MinecraftClient.hasPlayer(minecraft)) {
             return;
         }
 
@@ -105,7 +106,7 @@ public final class MarkerService {
 
         List<Marker> markers = markerManager.snapshot();
         worldRenderer.render(
-            Minecraft.getMinecraft(),
+            MinecraftClient.forWorldRender(),
             markers,
             event.partialTicks,
             WAYPOINT_RANGE
@@ -117,7 +118,7 @@ public final class MarkerService {
         EntityPlayer player,
         MegaWallsConfig config
     ) {
-        if (minecraft == null || minecraft.thePlayer == null || player == null) {
+        if (!MinecraftClient.hasPlayer(minecraft) || player == null) {
             return;
         }
 
@@ -164,8 +165,7 @@ public final class MarkerService {
     private void flushPendingPlayerTargetBroadcast(Minecraft minecraft) {
         if (
             pendingPlayerTargetBroadcast == null ||
-            minecraft == null ||
-            minecraft.thePlayer == null
+            !MinecraftClient.hasPlayer(minecraft)
         ) {
             return;
         }
@@ -185,7 +185,7 @@ public final class MarkerService {
     }
 
     private void sendPlayerTargetBroadcast(Minecraft minecraft, String command, long now) {
-        if (minecraft == null || minecraft.thePlayer == null) {
+        if (!MinecraftClient.hasPlayer(minecraft)) {
             return;
         }
 

@@ -3,6 +3,7 @@ package megawalls.waypoint.sync;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import megawalls.service.DeveloperDebugService;
+import megawalls.util.MinecraftClient;
 import megawalls.waypoint.Marker;
 import megawalls.waypoint.MarkerManager;
 import net.minecraft.client.Minecraft;
@@ -34,12 +35,8 @@ public final class ChatMarkerTransport {
     }
 
     private void flushQueued() {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        if (
-            queuedMarker == null ||
-            minecraft == null ||
-            minecraft.thePlayer == null
-        ) {
+        Minecraft minecraft = MinecraftClient.withPlayer();
+        if (queuedMarker == null || minecraft == null) {
             return;
         }
 
@@ -76,10 +73,8 @@ public final class ChatMarkerTransport {
         }
 
         String sender = extractSender(plain, payload.getStartIndex());
-        Minecraft minecraft = Minecraft.getMinecraft();
-        String localName = minecraft == null || minecraft.thePlayer == null
-            ? ""
-            : minecraft.thePlayer.getName();
+        Minecraft minecraft = MinecraftClient.withPlayer();
+        String localName = minecraft == null ? "" : minecraft.thePlayer.getName();
         if (sender.equalsIgnoreCase(localName)) {
             log(debugService, "ignored-self sender=" + sender + " payload=" + payload.getValue());
             return HandleResult.MATCHED_IGNORED;

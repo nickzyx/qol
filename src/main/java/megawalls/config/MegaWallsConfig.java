@@ -13,6 +13,7 @@ import cc.polyfrost.oneconfig.config.data.Mod;
 import cc.polyfrost.oneconfig.config.data.ModType;
 import cc.polyfrost.oneconfig.config.data.OptionSize;
 import megawalls.MegaWallsMod;
+import megawalls.render.HunterForceOfNatureHud;
 import megawalls.render.MobilityLeapAlertHud;
 import megawalls.util.ChatNotifier;
 
@@ -300,6 +301,77 @@ public final class MegaWallsConfig extends Config {
     @KeyBind(
         size = OptionSize.DUAL,
         name = "Toggle KeyBind",
+        description = "Press this key to enable or disable.",
+        category = "Casino",
+        subcategory = "Hunter F.O.N."
+    )
+    public OneKeyBind hunterFonKeybind = new OneKeyBind();
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Enable",
+        description = "Replace Hunter Force of Nature actionbar text with a slot-style animation.",
+        category = "Casino",
+        subcategory = "Hunter F.O.N."
+    )
+    public boolean hunterFonSlotHud = true;
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Strength Sound",
+        description = "Play a sound when Force of Nature rolls Strength.",
+        category = "Casino",
+        subcategory = "Hunter F.O.N."
+    )
+    public boolean hunterFonStrengthSound = true;
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Roll Sound",
+        description = "Play a sound while the Force of Nature slot animation rolls.",
+        category = "Casino",
+        subcategory = "Hunter F.O.N."
+    )
+    public boolean hunterFonRollSound = true;
+
+    @Dropdown(
+        size = OptionSize.DUAL,
+        name = "Roll Sound Type",
+        description = "Choose the sound used while the Force of Nature slot animation rolls.",
+        options = { "Default", "Mystery Box" },
+        category = "Casino",
+        subcategory = "Hunter F.O.N."
+    )
+    public int hunterFonRollSoundType = 0;
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Use HUD",
+        description = "Display the Force of Nature roll on a movable HUD instead of in the actionbar.",
+        category = "Casino",
+        subcategory = "Hunter F.O.N."
+    )
+    public boolean hunterFonDraggableHud = false;
+
+    @HUD(
+        name = "F.O.N. HUD",
+        category = "Casino",
+        subcategory = "Hunter F.O.N."
+    )
+    public HunterForceOfNatureHud hunterFonHud = new HunterForceOfNatureHud();
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Text Shadow",
+        description = "Draw the custom Force of Nature actionbar text with a shadow.",
+        category = "Casino",
+        subcategory = "Hunter F.O.N."
+    )
+    public boolean hunterFonTextShadow = true;
+
+    @KeyBind(
+        size = OptionSize.DUAL,
+        name = "Toggle KeyBind",
         description = "Press this key in Mega Walls to enable or disable Mobility Alert.",
         category = "General",
         subcategory = "Mobility Alert"
@@ -560,6 +632,7 @@ public final class MegaWallsConfig extends Config {
         registerKeyBind(potionTablistKeybind, this::togglePotionTablistDisplay);
         registerKeyBind(mobilityAlertKeybind, this::toggleMobilityAlert);
         registerKeyBind(waypointPingKeybind, MegaWallsMod::pingWaypointNow);
+        registerKeyBind(hunterFonKeybind, this::toggleHunterFon);
         registerKeyBind(
             transparentSnowmenKeybind,
             this::toggleTransparentSnowmen
@@ -637,6 +710,12 @@ public final class MegaWallsConfig extends Config {
 
         mobilityAlertEnabled = !mobilityAlertEnabled;
         ChatNotifier.toggle("Mobility Alert", mobilityAlertEnabled);
+        save();
+    }
+
+    private void toggleHunterFon() {
+        hunterFonSlotHud = !hunterFonSlotHud;
+        ChatNotifier.toggle("Hunter F.O.N.", hunterFonSlotHud);
         save();
     }
 

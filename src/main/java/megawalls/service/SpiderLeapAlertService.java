@@ -3,6 +3,7 @@ package megawalls.service;
 import megawalls.MegaWallsMod;
 import megawalls.config.MegaWallsConfig;
 import megawalls.domain.MegaWallsClass;
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
@@ -55,7 +56,7 @@ final class SpiderLeapAlertService {
 
     void onPlaySound(PlaySoundEvent event) {
         MegaWallsConfig config = MegaWallsMod.getConfig();
-        Minecraft minecraft = Minecraft.getMinecraft();
+        Minecraft minecraft = MinecraftClient.withWorld();
         if (
             config == null ||
             !config.mobilityAlertEnabled ||
@@ -63,8 +64,6 @@ final class SpiderLeapAlertService {
             !contextService.isInMegaWalls() ||
             !contextService.isTrackingActive() ||
             minecraft == null ||
-            minecraft.theWorld == null ||
-            minecraft.thePlayer == null ||
             event == null ||
             event.name == null ||
             event.sound == null ||

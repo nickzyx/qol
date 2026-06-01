@@ -41,19 +41,33 @@ Detects diamond armor and diamond swords that are not part of a player's class k
 
 ### Strength Tracker
 
-Detects Zombie, Dreadlord, and Herobrine strength activations.
+Detects Zombie, Dreadlord, and Herobrine strength activations, with optional player outlines for active strength users.
 
 ![Strength Tracker example](examples/strength_example.png)
+
+### Waypoints
+
+Place shared party waypoints by looking at a block or player and pressing the ping keybind. Location pings render as world markers with static labels, while player pings highlight the target player and can announce the target in public or party chat.
 
 ### Mobility Alert
 
 Warns when enemy Spider or Enderman players are within relevant threat range.
+
+### Casino
+
+Replaces Hunter Force of Nature action bar text with a slot-style roll animation.
+
+![Hunter F.O.N. Casino example](examples/casino_example.gif)
 
 ### Transparent Snowmen
 
 Renders ally Snowman mobs translucently, with an option to apply the render to all Snowmen.
 
 ![Transparent Snowmen example](examples/snowman_example.gif)
+
+### Visible Barriers
+
+Renders barrier blocks as selectable colored glass styles.
 
 ### Auto Update
 
@@ -94,15 +108,22 @@ Most modules are disabled by default and can be enabled independently in OneConf
 - `Interaction Guard`: Prevents accidental right-click interactions with crafting tables, chests, furnaces, while holding a sword. Also an optional empty-hand-only mode.
 - `Phoenix Resurrection Tracker`: Enables resurrection tracking and optional chat notifications.
 - `Diamond Tracker`: Enables non-kit diamond tracking, chat notifications, and deathmatch-only mode.
-- `Strength Tracker`: Enables strength detection, Zombie strength detection, repeated alert behavior, and deathmatch-only mode.
+- `Strength Tracker`: Enables strength detection, Zombie strength detection, player outlines, repeated alert behavior, and deathmatch-only mode.
+- `Waypoints`: Configures shared waypoint pings, ping keybind, and message channel.
 - `Mobility Alert`: Enables enemy Spider and Enderman range alerts, chat notifications, chat interval, keybind toggle, and deathmatch-only mode.
 - `Auto Update`: Checks GitHub releases for newer versions and links to the releases page when an update is available.
+
+### Casino
+
+- `Hunter F.O.N.`: Enables the casino-style Force of Nature HUD, keybind toggle, result sounds, roll sounds, roll sound type, draggable HUD mode, and text shadow.
 
 ### Render
 
 - `Phoenix Resurrection Tracker`: Shows resurrection hearts in the tablist and nametags.
 - `Diamond Tracker`: Shows non-kit diamond armor and sword icons in the tablist.
-- `Visuals`: Enables ally-only transparent Snowman rendering, optional all-team rendering, the render keybind toggle, and opacity.
+- `Waypoints`: Controls world marker rendering for location pings.
+- `Barriers`: Enables visible barriers and chooses the glass color style. Restart Minecraft after changing the barrier style.
+- `Snowmen`: Enables ally-only transparent Snowman rendering, optional all-team rendering, the render keybind toggle, and opacity.
 
 ![Nametag indicator example](examples/indicator_example.png)
 

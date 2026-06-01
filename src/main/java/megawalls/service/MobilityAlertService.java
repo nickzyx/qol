@@ -4,6 +4,7 @@ import megawalls.MegaWallsMod;
 import megawalls.config.MegaWallsConfig;
 import megawalls.domain.MegaWallsClass;
 import megawalls.util.ChatNotifier;
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
@@ -58,9 +59,7 @@ final class MobilityAlertService {
             !config.mobilityAlertEnabled ||
             !contextService.isInMegaWalls() ||
             !contextService.isTrackingActive() ||
-            minecraft == null ||
-            minecraft.theWorld == null ||
-            minecraft.thePlayer == null
+            !MinecraftClient.hasWorld(minecraft)
         ) {
             activeAlerts.clear();
             return;

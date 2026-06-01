@@ -15,6 +15,7 @@ import megawalls.MegaWallsMod;
 import megawalls.config.MegaWallsConfig;
 import megawalls.domain.MegaWallsClass;
 import megawalls.render.BarrierBlockReplacement.BarrierPerformanceSnapshot;
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.entity.player.EntityPlayer;
@@ -50,7 +51,6 @@ public final class DeveloperDebugService {
             return;
         }
 
-        ensureOpen(minecraft);
         long now = System.currentTimeMillis();
         if (now < nextSnapshotAt) {
             return;
@@ -74,7 +74,6 @@ public final class DeveloperDebugService {
             return;
         }
 
-        ensureOpen(Minecraft.getMinecraft());
         log(
             "chat",
             "formatted=\"" + sanitize(formattedMessage) + "\" stripped=\"" +
@@ -87,7 +86,6 @@ public final class DeveloperDebugService {
             return;
         }
 
-        ensureOpen(Minecraft.getMinecraft());
         log("waypoint", message);
     }
 
@@ -102,7 +100,6 @@ public final class DeveloperDebugService {
         }
 
         nextBarrierPerformanceAt = now + SNAPSHOT_INTERVAL_MS;
-        ensureOpen(Minecraft.getMinecraft());
         log(
             "barrier.perf",
             "enabled=" + snapshot.enabled +
@@ -128,7 +125,6 @@ public final class DeveloperDebugService {
             return;
         }
 
-        ensureOpen(Minecraft.getMinecraft());
         log(
             "barrier.refresh",
             "visibleBarriers=" + visibleBarriers +
@@ -143,7 +139,6 @@ public final class DeveloperDebugService {
             return;
         }
 
-        ensureOpen(Minecraft.getMinecraft());
         String position = event.sound == null
             ? "sound=null"
             : "x=" + event.sound.getXPosF() +
@@ -214,7 +209,6 @@ public final class DeveloperDebugService {
             return;
         }
 
-        ensureOpen(Minecraft.getMinecraft());
         log(
             accepted ? "potion-accepted" : "potion-rejected",
             "player=" + sanitize(
@@ -253,7 +247,6 @@ public final class DeveloperDebugService {
             return;
         }
 
-        ensureOpen(Minecraft.getMinecraft());
         log(
             "potion-health-missing",
             "player=" + sanitize(
@@ -284,7 +277,6 @@ public final class DeveloperDebugService {
             return;
         }
 
-        ensureOpen(Minecraft.getMinecraft());
         log(
             "spider-sound-match",
             "sound=" + sanitize(soundName) +
@@ -317,7 +309,6 @@ public final class DeveloperDebugService {
             return;
         }
 
-        ensureOpen(Minecraft.getMinecraft());
         log(
             accepted ? "spider-leap-accepted" : "spider-leap-rejected",
             "player=" + (spider == null ? "null" : sanitize(spider.getName())) +
@@ -346,7 +337,6 @@ public final class DeveloperDebugService {
             return;
         }
 
-        ensureOpen(Minecraft.getMinecraft());
         log("packet." + packetType, message);
     }
 
@@ -354,7 +344,7 @@ public final class DeveloperDebugService {
         Minecraft minecraft,
         MegaWallsClassResolver classResolver
     ) {
-        if (minecraft == null || minecraft.theWorld == null) {
+        if (!MinecraftClient.hasLoadedWorld(minecraft)) {
             log("scoreboard", "world=null");
             return;
         }
@@ -417,15 +407,13 @@ public final class DeveloperDebugService {
     }
 
     private void logTablistSnapshot(Minecraft minecraft) {
-        if (minecraft == null || minecraft.getNetHandler() == null) {
+        Collection<NetworkPlayerInfo> players = MinecraftClient.playerInfoMap();
+        if (players == null) {
             log("tablist", "netHandler=null");
             return;
         }
 
-        Collection<NetworkPlayerInfo> players = minecraft
-            .getNetHandler()
-            .getPlayerInfoMap();
-        if (players == null || players.isEmpty()) {
+        if (players.isEmpty()) {
             log("tablist", "empty=true");
             return;
         }
@@ -460,7 +448,7 @@ public final class DeveloperDebugService {
         Minecraft minecraft,
         MegaWallsClassResolver classResolver
     ) {
-        if (minecraft == null || minecraft.theWorld == null) {
+        if (!MinecraftClient.hasLoadedWorld(minecraft)) {
             log("players", "world=null");
             return;
         }
@@ -519,7 +507,7 @@ public final class DeveloperDebugService {
         try {
             writer = new PrintWriter(new FileWriter(logFile, true));
             wasEnabled = true;
-            log("debug", "opened file=" + logFile.getAbsolutePath());
+            writeLine("debug", "opened file=" + logFile.getAbsolutePath());
         } catch (IOException ignored) {
             writer = null;
         }
@@ -539,6 +527,11 @@ public final class DeveloperDebugService {
     }
 
     private synchronized void log(String category, String message) {
+        ensureOpen(MinecraftClient.get());
+        writeLine(category, message);
+    }
+
+    private void writeLine(String category, String message) {
         if (writer == null) {
             return;
         }

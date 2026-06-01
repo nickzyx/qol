@@ -1,5 +1,6 @@
 package megawalls.render;
 
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelSnowMan;
 import net.minecraft.client.renderer.GlStateManager;
@@ -198,7 +199,7 @@ public final class TransparentSnowmanRenderer {
             GlStateManager.rotate(180.0F, 0.0F, 1.0F, 0.0F);
             GlStateManager.scale(scale, -scale, -scale);
             GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
-            renderTransparentPumpkinCube(Minecraft.getMinecraft(), alpha);
+            renderTransparentPumpkinCube(MinecraftClient.get(), alpha);
         } finally {
             GlStateManager.disableRescaleNormal();
             GlStateManager.popMatrix();

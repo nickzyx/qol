@@ -6,8 +6,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import megawalls.service.MegaWallsService;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.network.NetHandlerPlayClient;
+import megawalls.util.MinecraftClient;
 import net.minecraft.entity.DataWatcher;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.S04PacketEntityEquipment;
@@ -58,9 +57,7 @@ public final class ClientboundPacketObserver {
     }
 
     private void updateAttachment() {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        NetHandlerPlayClient netHandler = minecraft == null ? null : minecraft.getNetHandler();
-        NetworkManager networkManager = netHandler == null ? null : netHandler.getNetworkManager();
+        NetworkManager networkManager = MinecraftClient.networkManager();
 
         if (networkManager == null) {
             detachObserver();

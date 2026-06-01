@@ -1,6 +1,7 @@
 package megawalls.waypoint;
 
 import java.util.List;
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.FontRenderer;
@@ -18,9 +19,7 @@ public final class MarkerWorldRenderer {
 
     public void render(Minecraft minecraft, List<Marker> markers, float partialTicks, int renderRange) {
         if (
-            minecraft == null ||
-            minecraft.thePlayer == null ||
-            minecraft.theWorld == null ||
+            !MinecraftClient.hasWorld(minecraft) ||
             markers == null ||
             markers.isEmpty()
         ) {
@@ -124,8 +123,7 @@ public final class MarkerWorldRenderer {
         double playerZ
     ) {
         if (
-            minecraft == null ||
-            minecraft.fontRendererObj == null ||
+            !MinecraftClient.hasHud(minecraft) ||
             minecraft.getRenderManager() == null
         ) {
             return;

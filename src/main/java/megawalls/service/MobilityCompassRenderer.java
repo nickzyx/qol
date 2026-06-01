@@ -3,6 +3,7 @@ package megawalls.service;
 import java.util.List;
 import megawalls.config.MegaWallsConfig;
 import megawalls.domain.MegaWallsClass;
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.gui.FontRenderer;
@@ -27,10 +28,7 @@ final class MobilityCompassRenderer {
         List<MobilityAlertSnapshot> alerts
     ) {
         if (
-            minecraft == null ||
-            minecraft.thePlayer == null ||
-            minecraft.theWorld == null ||
-            minecraft.fontRendererObj == null ||
+            !MinecraftClient.hasWorldHud(minecraft) ||
             config == null ||
             alerts == null ||
             alerts.isEmpty()

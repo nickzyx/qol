@@ -2,6 +2,7 @@ package megawalls.service;
 
 import java.util.Locale;
 import megawalls.domain.MegaWallsClass;
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.entity.player.EntityPlayer;
@@ -11,10 +12,8 @@ import net.minecraft.util.IChatComponent;
 public final class MegaWallsClassResolver {
 
     MegaWallsClass resolveLocalClass() {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        return minecraft.thePlayer == null
-            ? null
-            : resolveMegaWallsClass(minecraft.thePlayer);
+        Minecraft minecraft = MinecraftClient.withPlayer();
+        return minecraft == null ? null : resolveMegaWallsClass(minecraft.thePlayer);
     }
 
     MegaWallsClass resolveMegaWallsClass(EntityPlayer player) {
@@ -48,14 +47,11 @@ public final class MegaWallsClassResolver {
     }
 
     public String getRenderedName(EntityPlayer player) {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft.getNetHandler() == null || player == null) {
-            return player == null ? "" : player.getName();
+        if (player == null) {
+            return "";
         }
 
-        NetworkPlayerInfo playerInfo = minecraft
-            .getNetHandler()
-            .getPlayerInfo(player.getUniqueID());
+        NetworkPlayerInfo playerInfo = MinecraftClient.playerInfo(player.getUniqueID());
         if (playerInfo != null && playerInfo.getDisplayName() != null) {
             return playerInfo.getDisplayName().getFormattedText();
         }

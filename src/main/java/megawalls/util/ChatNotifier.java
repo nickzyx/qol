@@ -54,10 +54,8 @@ public final class ChatNotifier {
     }
 
     private static void send(IChatComponent message) {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        if (
-            message == null || minecraft == null || minecraft.ingameGUI == null
-        ) {
+        Minecraft minecraft = MinecraftClient.get();
+        if (message == null || minecraft == null || minecraft.ingameGUI == null) {
             return;
         }
 

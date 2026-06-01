@@ -2,6 +2,7 @@ package megawalls.waypoint;
 
 import com.google.common.base.Predicate;
 import java.util.List;
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
@@ -18,7 +19,7 @@ public final class MarkerRaycastService {
     }
 
     public LookTarget resolveLookTarget(Minecraft minecraft, int range) {
-        if (minecraft == null || minecraft.thePlayer == null) {
+        if (!MinecraftClient.hasWorld(minecraft)) {
             return null;
         }
 
@@ -71,7 +72,7 @@ public final class MarkerRaycastService {
         int range,
         double maxDistance
     ) {
-        if (minecraft.theWorld == null) {
+        if (!MinecraftClient.hasWorld(minecraft)) {
             return null;
         }
 

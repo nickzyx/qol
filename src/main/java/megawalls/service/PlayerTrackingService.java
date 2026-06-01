@@ -13,6 +13,7 @@ import megawalls.config.MegaWallsConfig;
 import megawalls.domain.DiamondGear;
 import megawalls.domain.MegaWallsClass;
 import megawalls.util.ChatNotifier;
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.entity.player.EntityPlayer;
@@ -157,7 +158,7 @@ final class PlayerTrackingService {
     }
 
     void onClientTick(Minecraft minecraft) {
-        if (minecraft == null || minecraft.theWorld == null) {
+        if (!MinecraftClient.hasWorld(minecraft)) {
             return;
         }
 
@@ -174,8 +175,8 @@ final class PlayerTrackingService {
     }
 
     void onChatReceived(ClientChatReceivedEvent event) {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft == null || minecraft.thePlayer == null) {
+        Minecraft minecraft = MinecraftClient.withPlayer();
+        if (minecraft == null) {
             return;
         }
 
@@ -187,11 +188,10 @@ final class PlayerTrackingService {
 
     void onPlaySound(PlaySoundEvent event) {
         MegaWallsConfig config = MegaWallsMod.getConfig();
-        Minecraft minecraft = Minecraft.getMinecraft();
+        Minecraft minecraft = MinecraftClient.withWorld();
         if (
             config == null ||
             minecraft == null ||
-            minecraft.theWorld == null ||
             !config.strengthDetectorEnabled ||
             !canUseStrength(config) ||
             !config.zombieStrength ||
@@ -435,17 +435,11 @@ final class PlayerTrackingService {
     }
 
     private void seedTablistStates(Minecraft minecraft) {
-        if (minecraft.getNetHandler() == null) {
-            return;
-        }
-
         Scoreboard scoreboard =
             minecraft.theWorld == null
                 ? null
                 : minecraft.theWorld.getScoreboard();
-        Collection<NetworkPlayerInfo> playerInfoMap = minecraft
-            .getNetHandler()
-            .getPlayerInfoMap();
+        Collection<NetworkPlayerInfo> playerInfoMap = MinecraftClient.playerInfoMap();
         if (playerInfoMap == null || playerInfoMap.isEmpty()) {
             return;
         }
@@ -537,7 +531,7 @@ final class PlayerTrackingService {
         String renderedName,
         TrackedPlayerState trackedPlayerState
     ) {
-        Minecraft minecraft = Minecraft.getMinecraft();
+        Minecraft minecraft = MinecraftClient.get();
         if (minecraft == null || trackedPlayerState == null) {
             return;
         }
@@ -550,12 +544,9 @@ final class PlayerTrackingService {
         if (
             (effectiveRenderedName == null ||
                 effectiveRenderedName.isEmpty()) &&
-            minecraft.getNetHandler() != null &&
             playerId != null
         ) {
-            NetworkPlayerInfo playerInfo = minecraft
-                .getNetHandler()
-                .getPlayerInfo(playerId);
+            NetworkPlayerInfo playerInfo = MinecraftClient.playerInfo(playerId);
             if (playerInfo != null && playerInfo.getDisplayName() != null) {
                 effectiveRenderedName = playerInfo
                     .getDisplayName()
@@ -1143,8 +1134,8 @@ final class PlayerTrackingService {
     }
 
     private EntityPlayer resolvePlayerEntity(UUID playerId, String profileName) {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft == null || minecraft.theWorld == null) {
+        Minecraft minecraft = MinecraftClient.withLoadedWorld();
+        if (minecraft == null) {
             return null;
         }
 

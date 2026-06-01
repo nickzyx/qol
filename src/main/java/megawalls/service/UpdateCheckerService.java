@@ -12,6 +12,7 @@ import java.net.URL;
 import megawalls.MegaWallsMod;
 import megawalls.config.MegaWallsConfig;
 import megawalls.util.ChatNotifier;
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 
 final class UpdateCheckerService {
@@ -28,8 +29,7 @@ final class UpdateCheckerService {
     void onClientTick(Minecraft minecraft, MegaWallsConfig config) {
         if (
             checkStarted ||
-            minecraft == null ||
-            minecraft.thePlayer == null ||
+            !MinecraftClient.hasPlayer(minecraft) ||
             config == null ||
             !config.updateCheckerEnabled
         ) {

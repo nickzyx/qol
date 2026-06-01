@@ -10,24 +10,19 @@ import megawalls.config.MegaWallsConfig;
 import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 
-public final class MobilityLeapAlertHud extends BasicHud {
+public final class HunterForceOfNatureHud extends BasicHud {
 
     @Exclude
-    private static final long DISPLAY_MS = 1750L;
-    @Exclude
-    private static final String PREVIEW_TEXT =
-        "Spider Example activated Leap (15m).";
+    private static final String PREVIEW_TEXT = "\u00a7aF.O.N. \u00a7cSTRENGTH";
 
     @Exclude
-    private transient String message = "";
-    @Exclude
-    private transient long visibleUntilMs = 0L;
+    private transient String text = "";
 
-    public MobilityLeapAlertHud() {
+    public HunterForceOfNatureHud() {
         super(
             true,
-            780.0F,
-            500.0F,
+            450.0F,
+            420.0F,
             1.0F,
             true,
             false,
@@ -42,25 +37,16 @@ public final class MobilityLeapAlertHud extends BasicHud {
         this.positionAlignment = 2;
     }
 
-    public void showLeapAlert(String playerName, int distance) {
-        if (playerName == null || playerName.isEmpty()) {
-            return;
-        }
-
-        this.message =
-            "Spider " + playerName + " activated Leap (" + distance + "m).";
-        this.visibleUntilMs = System.currentTimeMillis() + DISPLAY_MS;
-    }
-
-    public void renderActive(Minecraft minecraft, MegaWallsConfig config) {
+    public void renderActive(Minecraft minecraft, MegaWallsConfig config, String text) {
         if (
             minecraft == null ||
             config == null ||
-            !config.mobilityLeapGuiAlert
+            !config.hunterFonDraggableHud
         ) {
             return;
         }
 
+        this.text = text == null ? "" : text;
         drawAll(new UMatrixStack(), false);
     }
 
@@ -77,8 +63,8 @@ public final class MobilityLeapAlertHud extends BasicHud {
             getDisplayText(example),
             x,
             y,
-            0xFF5555,
-            config != null && config.mobilityLeapAlertTextShadow
+            0xFFFFFF,
+            config != null && config.hunterFonTextShadow
                 ? TextRenderer.TextType.SHADOW
                 : TextRenderer.TextType.NONE,
             scale
@@ -99,21 +85,12 @@ public final class MobilityLeapAlertHud extends BasicHud {
     protected boolean shouldShow() {
         MegaWallsConfig config = MegaWallsMod.getConfig();
         return config != null &&
-            config.mobilityLeapGuiAlert &&
-            isAlertVisible() &&
+            config.hunterFonDraggableHud &&
             super.shouldShow();
     }
 
-    private boolean isAlertVisible() {
-        MegaWallsConfig config = MegaWallsMod.getConfig();
-        return config != null &&
-            System.currentTimeMillis() <= visibleUntilMs &&
-            message != null &&
-            !message.isEmpty();
-    }
-
     private String getDisplayText(boolean example) {
-        return example ? PREVIEW_TEXT : message;
+        return example ? PREVIEW_TEXT : text;
     }
 
     private float getTextWidth(String text) {
@@ -123,7 +100,7 @@ public final class MobilityLeapAlertHud extends BasicHud {
 
         Minecraft minecraft = MinecraftClient.forHud();
         if (minecraft != null) {
-            return TextRenderer.getStringWidth(text);
+            return minecraft.fontRendererObj.getStringWidth(text);
         }
 
         return text.length() * 6.0F;

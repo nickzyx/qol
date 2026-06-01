@@ -8,6 +8,7 @@ import megawalls.render.NametagIconService;
 import megawalls.render.BarrierBlockReplacement;
 import megawalls.render.SnowmanTeamResolver;
 import megawalls.render.TransparentSnowmanRenderer;
+import megawalls.util.MinecraftClient;
 import megawalls.waypoint.MarkerService;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
@@ -58,6 +59,8 @@ public final class MegaWallsService {
             new TransparentSnowmanRenderer();
     private final UpdateCheckerService updateCheckerService = new UpdateCheckerService();
     private final MarkerService markerService = new MarkerService();
+    private final HunterForceOfNatureService hunterForceOfNatureService =
+            new HunterForceOfNatureService();
     private boolean lastVisibleBarriers;
 
     private MegaWallsService() {}
@@ -117,7 +120,7 @@ public final class MegaWallsService {
             return;
         }
 
-        Minecraft minecraft = Minecraft.getMinecraft();
+        Minecraft minecraft = MinecraftClient.get();
         WorldClient world = minecraft == null ? null : minecraft.theWorld;
         if (contextService.syncWorld(world)) {
             playerTrackingService.clear();
@@ -125,7 +128,7 @@ public final class MegaWallsService {
             nametagIconService.reset(minecraft);
         }
 
-        if (minecraft == null || minecraft.thePlayer == null || world == null) {
+        if (!MinecraftClient.hasPlayer(minecraft) || world == null) {
             return;
         }
 
@@ -177,8 +180,14 @@ public final class MegaWallsService {
         String strippedMessage = event == null || event.message == null
                 ? ""
                 : event.message.getUnformattedTextForChat();
+        MegaWallsConfig config = MegaWallsMod.getConfig();
 
-        if (markerService.onChat(formattedMessage, strippedMessage, MegaWallsMod.getConfig(), debugService)) {
+        if (hunterForceOfNatureService.onChatReceived(event, config)) {
+            event.setCanceled(true);
+            return;
+        }
+
+        if (markerService.onChat(formattedMessage, strippedMessage, config, debugService)) {
             event.setCanceled(true);
             return;
         }
@@ -203,10 +212,7 @@ public final class MegaWallsService {
 
     private void refreshBarrierChunksIfNeeded(Minecraft minecraft, MegaWallsConfig config) {
         if (
-                minecraft == null ||
-                minecraft.thePlayer == null ||
-                minecraft.theWorld == null ||
-                minecraft.renderGlobal == null ||
+                !MinecraftClient.hasRenderGlobal(minecraft) ||
                 config == null
         ) {
             return;
@@ -243,16 +249,17 @@ public final class MegaWallsService {
 
     @SubscribeEvent
     public void onRenderOverlay(RenderGameOverlayEvent.Text event) {
-        if (
-                event == null ||
-                Minecraft.getMinecraft() == null ||
-                Minecraft.getMinecraft().thePlayer == null ||
-                Minecraft.getMinecraft().theWorld == null
-        ) {
+        if (event == null) {
+            return;
+        }
+
+        Minecraft minecraft = MinecraftClient.withWorld();
+        if (minecraft == null) {
             return;
         }
 
         MegaWallsConfig config = MegaWallsMod.getConfig();
+        hunterForceOfNatureService.onRenderOverlay(event, config);
 
         if (
                 config == null ||
@@ -262,7 +269,6 @@ public final class MegaWallsService {
             return;
         }
 
-        Minecraft minecraft = Minecraft.getMinecraft();
         if (config.mobilityCompassHud) {
             mobilityCompassRenderer.render(
                     minecraft,

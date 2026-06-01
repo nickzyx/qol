@@ -2,6 +2,7 @@ package megawalls.service;
 
 import megawalls.domain.MegaWallsClass;
 import megawalls.util.ChatNotifier;
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 
 final class EnergyReportService {
@@ -13,8 +14,8 @@ final class EnergyReportService {
     }
 
     void reportEnergyNow() {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft == null || minecraft.thePlayer == null) {
+        Minecraft minecraft = MinecraftClient.withPlayer();
+        if (minecraft == null) {
             return;
         }
 

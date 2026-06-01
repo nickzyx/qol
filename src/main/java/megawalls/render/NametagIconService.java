@@ -10,6 +10,7 @@ import megawalls.config.MegaWallsConfig;
 import megawalls.service.MegaWallsClassResolver;
 import megawalls.service.MegaWallsContextService;
 import megawalls.service.MegaWallsService;
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ChatComponentText;
@@ -51,9 +52,7 @@ public final class NametagIconService {
     public void handleClientTick(Minecraft minecraft) {
         MegaWallsConfig config = MegaWallsMod.getConfig();
         if (
-            minecraft == null ||
-            minecraft.theWorld == null ||
-            minecraft.thePlayer == null ||
+            !MinecraftClient.hasWorld(minecraft) ||
             config == null ||
             !contextService.isInMegaWalls() ||
             !contextService.isTrackingActive()
@@ -72,7 +71,7 @@ public final class NametagIconService {
     }
 
     public void reset(Minecraft minecraft) {
-        if (minecraft == null || minecraft.theWorld == null) {
+        if (!MinecraftClient.hasLoadedWorld(minecraft)) {
             return;
         }
 

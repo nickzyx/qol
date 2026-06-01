@@ -5,6 +5,7 @@ import java.util.UUID;
 import megawalls.api.PlayerStateView;
 import megawalls.api.TablistBridge;
 import megawalls.domain.DiamondGear;
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.network.NetworkPlayerInfo;
@@ -134,10 +135,9 @@ public final class TablistRenderer {
             return;
         }
 
-        Minecraft minecraft = Minecraft.getMinecraft();
+        Minecraft minecraft = MinecraftClient.forHud();
         if (
             minecraft == null ||
-            minecraft.fontRendererObj == null ||
             minecraft.getRenderItem() == null
         ) {
             return;

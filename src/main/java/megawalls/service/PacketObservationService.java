@@ -1,5 +1,6 @@
 package megawalls.service;
 
+import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -56,8 +57,8 @@ final class PacketObservationService {
     }
 
     private EntityPlayer resolvePlayerEntity(int entityId) {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft == null || minecraft.theWorld == null) {
+        Minecraft minecraft = MinecraftClient.withLoadedWorld();
+        if (minecraft == null) {
             return null;
         }
 
