@@ -2,6 +2,7 @@ package megawalls.config;
 
 import cc.polyfrost.oneconfig.config.Config;
 import cc.polyfrost.oneconfig.config.annotations.Color;
+import cc.polyfrost.oneconfig.config.annotations.Dropdown;
 import cc.polyfrost.oneconfig.config.annotations.HUD;
 import cc.polyfrost.oneconfig.config.annotations.KeyBind;
 import cc.polyfrost.oneconfig.config.annotations.Slider;
@@ -44,10 +45,37 @@ public final class MegaWallsConfig extends Config {
     )
     public boolean interactionGuardEmptyHandOnly = false;
 
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Visible Barriers",
+        description = "Render barrier blocks as glass.",
+        category = "Render",
+        subcategory = "Barriers"
+    )
+    public boolean visibleBarriers = false;
+
+    @Dropdown(
+        size = OptionSize.DUAL,
+        name = "Barrier Style (Restart Required)",
+        description = "Choose the glass color to render barriers. Restart Minecraft after changing this.",
+        options = {
+            "White Glass",
+            "Red Glass",
+            "Green Glass",
+            "Blue Glass",
+            "Yellow Glass",
+            "Cyan Glass",
+            "Purple Glass",
+        },
+        category = "Render",
+        subcategory = "Barriers"
+    )
+    public int barrierRenderStyle = 0;
+
     @KeyBind(
         size = OptionSize.DUAL,
         name = "Toggle Tablist Display",
-        description = "Press this key in Mega Walls to show or hide Phoenix resurrection icons in the tablist.",
+        description = "Press this key to show or hide Phoenix resurrection icons in the tablist.",
         category = "Render",
         subcategory = "Phoenix Resurrection Tracker"
     )
@@ -253,6 +281,15 @@ public final class MegaWallsConfig extends Config {
 
     @Switch(
         size = OptionSize.DUAL,
+        name = "Outline Strength Players",
+        description = "Render a warning outline around players with detected strength.",
+        category = "General",
+        subcategory = "Strength Tracker"
+    )
+    public boolean strengthOutline = false;
+
+    @Switch(
+        size = OptionSize.DUAL,
         name = "Only in Deathmatch",
         description = "Only run the Strength Tracker after deathmatch starts.",
         category = "General",
@@ -268,6 +305,52 @@ public final class MegaWallsConfig extends Config {
         subcategory = "Mobility Alert"
     )
     public OneKeyBind mobilityAlertKeybind = new OneKeyBind();
+
+    @KeyBind(
+        size = OptionSize.DUAL,
+        name = "Ping Location",
+        description = "Press this key to place a marker at the block or player you are looking at.",
+        category = "General",
+        subcategory = "Waypoints"
+    )
+    public OneKeyBind waypointPingKeybind = new OneKeyBind();
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Shared Waypoints",
+        description = "Share pings with party members. Party members without qol may see these messages.",
+        category = "General",
+        subcategory = "Waypoints"
+    )
+    public boolean waypointSharingEnabled = true;
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Hide Sync Messages",
+        description = "Hide qol waypoint sync messages from chat when receiving shared pings.",
+        category = "General",
+        subcategory = "Waypoints"
+    )
+    public boolean waypointHideSyncMessages = true;
+
+    @Dropdown(
+        size = OptionSize.DUAL,
+        name = "Message Channel",
+        description = "Choose where player target ping messages are sent.",
+        options = { "Public Chat", "Party Chat" },
+        category = "General",
+        subcategory = "Waypoints"
+    )
+    public int waypointPlayerTargetMessageChannel = 0;
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "World Markers",
+        description = "Render waypoint boxes and beams in the world.",
+        category = "Render",
+        subcategory = "Waypoints"
+    )
+    public boolean waypointRenderWorld = true;
 
     @Switch(
         size = OptionSize.DUAL,
@@ -321,6 +404,15 @@ public final class MegaWallsConfig extends Config {
     )
     public MobilityLeapAlertHud mobilityLeapAlertHud =
         new MobilityLeapAlertHud();
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Text Shadow",
+        description = "Draw the Leap Alert HUD text with a shadow.",
+        category = "Experimental",
+        subcategory = "Mobility Alert"
+    )
+    public boolean mobilityLeapAlertTextShadow = true;
 
     @Switch(
         size = OptionSize.DUAL,
@@ -389,7 +481,7 @@ public final class MegaWallsConfig extends Config {
         name = "Toggle Transparent Snowmen",
         description = "Press this key in Mega Walls to enable or disable transparent Snowman rendering.",
         category = "Render",
-        subcategory = "Visuals"
+        subcategory = "Snowmen"
     )
     public OneKeyBind transparentSnowmenKeybind = new OneKeyBind();
 
@@ -398,7 +490,7 @@ public final class MegaWallsConfig extends Config {
         name = "Transparent Snowmen",
         description = "Render Snowman mobs translucent while in Mega Walls.",
         category = "Render",
-        subcategory = "Visuals"
+        subcategory = "Snowmen"
     )
     public boolean transparentSnowmen = false;
 
@@ -407,7 +499,7 @@ public final class MegaWallsConfig extends Config {
         name = "Apply to All Snowmen",
         description = "Render enemy Snowman mobs translucent too. When disabled, only ally Snowman mobs are affected.",
         category = "Render",
-        subcategory = "Visuals"
+        subcategory = "Snowmen"
     )
     public boolean transparentSnowmenAllTeams = false;
 
@@ -418,7 +510,7 @@ public final class MegaWallsConfig extends Config {
         max = 90.0F,
         step = 5,
         category = "Render",
-        subcategory = "Visuals"
+        subcategory = "Snowmen"
     )
     public int transparentSnowmenOpacity = 35;
 
@@ -467,6 +559,7 @@ public final class MegaWallsConfig extends Config {
         );
         registerKeyBind(potionTablistKeybind, this::togglePotionTablistDisplay);
         registerKeyBind(mobilityAlertKeybind, this::toggleMobilityAlert);
+        registerKeyBind(waypointPingKeybind, MegaWallsMod::pingWaypointNow);
         registerKeyBind(
             transparentSnowmenKeybind,
             this::toggleTransparentSnowmen

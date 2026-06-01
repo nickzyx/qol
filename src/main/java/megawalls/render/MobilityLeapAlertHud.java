@@ -1,13 +1,15 @@
 package megawalls.render;
 
 import cc.polyfrost.oneconfig.config.annotations.Exclude;
-import cc.polyfrost.oneconfig.hud.SingleTextHud;
+import cc.polyfrost.oneconfig.config.core.OneColor;
+import cc.polyfrost.oneconfig.hud.BasicHud;
 import cc.polyfrost.oneconfig.libs.universal.UMatrixStack;
+import cc.polyfrost.oneconfig.renderer.TextRenderer;
 import megawalls.MegaWallsMod;
 import megawalls.config.MegaWallsConfig;
 import net.minecraft.client.Minecraft;
 
-public final class MobilityLeapAlertHud extends SingleTextHud {
+public final class MobilityLeapAlertHud extends BasicHud {
 
     @Exclude
     private static final long DISPLAY_MS = 1750L;
@@ -21,7 +23,21 @@ public final class MobilityLeapAlertHud extends SingleTextHud {
     private transient long visibleUntilMs = 0L;
 
     public MobilityLeapAlertHud() {
-        super("", true, 780, 500);
+        super(
+            true,
+            780.0F,
+            500.0F,
+            1.0F,
+            true,
+            false,
+            2.0F,
+            5.0F,
+            5.0F,
+            new OneColor(0, 0, 0, 120),
+            false,
+            2.0F,
+            new OneColor(0, 0, 0)
+        );
         this.positionAlignment = 2;
     }
 
@@ -48,16 +64,34 @@ public final class MobilityLeapAlertHud extends SingleTextHud {
     }
 
     @Override
-    protected String getText(boolean example) {
-        if (example) {
-            return PREVIEW_TEXT;
-        }
-        return message;
+    protected void draw(
+        UMatrixStack matrices,
+        float x,
+        float y,
+        float scale,
+        boolean example
+    ) {
+        MegaWallsConfig config = MegaWallsMod.getConfig();
+        TextRenderer.drawScaledString(
+            getDisplayText(example),
+            x,
+            y,
+            0xFF5555,
+            config != null && config.mobilityLeapAlertTextShadow
+                ? TextRenderer.TextType.SHADOW
+                : TextRenderer.TextType.NONE,
+            scale
+        );
     }
 
     @Override
-    protected String getTextFrequent(boolean example) {
-        return getText(example);
+    protected float getWidth(float scale, boolean example) {
+        return getTextWidth(getDisplayText(example)) * scale;
+    }
+
+    @Override
+    protected float getHeight(float scale, boolean example) {
+        return 8.0F * scale;
     }
 
     @Override
@@ -75,5 +109,22 @@ public final class MobilityLeapAlertHud extends SingleTextHud {
             System.currentTimeMillis() <= visibleUntilMs &&
             message != null &&
             !message.isEmpty();
+    }
+
+    private String getDisplayText(boolean example) {
+        return example ? PREVIEW_TEXT : message;
+    }
+
+    private float getTextWidth(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0.0F;
+        }
+
+        Minecraft minecraft = Minecraft.getMinecraft();
+        if (minecraft != null && minecraft.fontRendererObj != null) {
+            return TextRenderer.getStringWidth(text);
+        }
+
+        return text.length() * 6.0F;
     }
 }

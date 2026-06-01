@@ -1,6 +1,8 @@
 package megawalls;
 
 import java.io.File;
+import java.util.UUID;
+import megawalls.api.PlayerStateView;
 import megawalls.config.MegaWallsConfig;
 import megawalls.network.ClientboundPacketObserver;
 import megawalls.service.MegaWallsService;
@@ -42,8 +44,20 @@ public final class MegaWallsMod {
         MegaWallsService.INSTANCE.reportEnergyNow();
     }
 
+    public static void pingWaypointNow() {
+        MegaWallsService.INSTANCE.pingWaypointNow();
+    }
+
     public static boolean isInMegaWalls() {
         return MegaWallsService.INSTANCE.isInMegaWalls();
+    }
+
+    public static boolean isDeathmatchActive() {
+        return MegaWallsService.INSTANCE.isDeathmatchActive();
+    }
+
+    public static PlayerStateView queryNametagPlayerState(UUID playerId, String profileName, String renderedName) {
+        return MegaWallsService.INSTANCE.queryNametagPlayerState(playerId, profileName, renderedName);
     }
 
     public static MegaWallsConfig getConfig() {

@@ -14,6 +14,7 @@ import java.util.UUID;
 import megawalls.MegaWallsMod;
 import megawalls.config.MegaWallsConfig;
 import megawalls.domain.MegaWallsClass;
+import megawalls.render.BarrierBlockReplacement.BarrierPerformanceSnapshot;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.entity.player.EntityPlayer;
@@ -25,7 +26,7 @@ import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 
-final class DeveloperDebugService {
+public final class DeveloperDebugService {
 
     private static final long SNAPSHOT_INTERVAL_MS = 1000L;
     private static final SimpleDateFormat FILE_DATE_FORMAT =
@@ -36,6 +37,7 @@ final class DeveloperDebugService {
     private PrintWriter writer;
     private File logFile;
     private long nextSnapshotAt;
+    private long nextBarrierPerformanceAt;
     private boolean wasEnabled;
 
     void onClientTick(
@@ -77,6 +79,62 @@ final class DeveloperDebugService {
             "chat",
             "formatted=\"" + sanitize(formattedMessage) + "\" stripped=\"" +
                 sanitize(strippedMessage) + "\""
+        );
+    }
+
+    public void logWaypoint(String message) {
+        if (!isEnabled()) {
+            return;
+        }
+
+        ensureOpen(Minecraft.getMinecraft());
+        log("waypoint", message);
+    }
+
+    void logBarrierPerformance(BarrierPerformanceSnapshot snapshot) {
+        if (!isEnabled() || snapshot == null || snapshot.isEmpty()) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        if (now < nextBarrierPerformanceAt) {
+            return;
+        }
+
+        nextBarrierPerformanceAt = now + SNAPSHOT_INTERVAL_MS;
+        ensureOpen(Minecraft.getMinecraft());
+        log(
+            "barrier.perf",
+            "enabled=" + snapshot.enabled +
+                " style=" + snapshot.renderStyle +
+                " renderTypeCalls=" + snapshot.renderTypeCalls +
+                " blockLayerCalls=" + snapshot.blockLayerCalls +
+                " sideCalls=" + snapshot.sideCalls +
+                " sideCulled=" + snapshot.sideCulled +
+                " stateMapperCalls=" + snapshot.stateMapperCalls +
+                " stateMapperBarrierIncluded=" + snapshot.stateMapperBarrierIncluded +
+                " modelApplications=" + snapshot.modelApplications
+        );
+    }
+
+    void logBarrierChunkRefresh(
+        boolean visibleBarriers,
+        int radius,
+        int playerX,
+        int playerZ,
+        long elapsedNanos
+    ) {
+        if (!isEnabled()) {
+            return;
+        }
+
+        ensureOpen(Minecraft.getMinecraft());
+        log(
+            "barrier.refresh",
+            "visibleBarriers=" + visibleBarriers +
+                " radius=" + radius +
+                " center=" + playerX + "," + playerZ +
+                " elapsedMs=" + round(elapsedNanos / 1000000.0D)
         );
     }
 

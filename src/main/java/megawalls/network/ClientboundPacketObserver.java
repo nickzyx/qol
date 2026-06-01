@@ -206,21 +206,7 @@ public final class ClientboundPacketObserver {
             return;
         }
 
-        runOnChannel(channel, new Runnable() {
-            @Override
-            public void run() {
-                ChannelPipeline pipeline = channel.pipeline();
-                if (pipeline.get(HANDLER_NAME) != null) {
-                    return;
-                }
-
-                if (pipeline.get("packet_handler") != null) {
-                    pipeline.addBefore("packet_handler", HANDLER_NAME, inboundObserver);
-                } else {
-                    pipeline.addLast(HANDLER_NAME, inboundObserver);
-                }
-            }
-        });
+        runOnChannel(channel, true);
     }
 
     private void detachObserver() {
@@ -232,29 +218,58 @@ public final class ClientboundPacketObserver {
             return;
         }
 
-        runOnChannel(channel, new Runnable() {
-            @Override
-            public void run() {
-                ChannelPipeline pipeline = channel.pipeline();
-                if (pipeline.get(HANDLER_NAME) != null) {
-                    pipeline.remove(HANDLER_NAME);
-                }
-            }
-        });
+        runOnChannel(channel, false);
     }
 
-    private void runOnChannel(Channel channel, Runnable action) {
-        if (channel == null || action == null) {
+    private void runOnChannel(Channel channel, boolean install) {
+        if (channel == null) {
             return;
         }
 
         try {
             if (channel.eventLoop().inEventLoop()) {
-                action.run();
+                updatePipeline(channel, install);
             } else {
-                channel.eventLoop().execute(action);
+                channel.eventLoop().execute(new PipelineUpdate(channel, install));
             }
         } catch (Throwable ignored) {
+        }
+    }
+
+    private void updatePipeline(Channel channel, boolean install) {
+        if (channel == null) {
+            return;
+        }
+
+        ChannelPipeline pipeline = channel.pipeline();
+        if (install) {
+            if (pipeline.get(HANDLER_NAME) != null) {
+                return;
+            }
+
+            if (pipeline.get("packet_handler") != null) {
+                pipeline.addBefore("packet_handler", HANDLER_NAME, inboundObserver);
+            } else {
+                pipeline.addLast(HANDLER_NAME, inboundObserver);
+            }
+        } else if (pipeline.get(HANDLER_NAME) != null) {
+            pipeline.remove(HANDLER_NAME);
+        }
+    }
+
+    private final class PipelineUpdate implements Runnable {
+
+        private final Channel channel;
+        private final boolean install;
+
+        private PipelineUpdate(Channel channel, boolean install) {
+            this.channel = channel;
+            this.install = install;
+        }
+
+        @Override
+        public void run() {
+            updatePipeline(channel, install);
         }
     }
 

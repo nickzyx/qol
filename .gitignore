@@ -5,6 +5,7 @@
 gradle-user/
 gradle-user-home/
 build/
+docs/
 run/
 run-mmc/
 bin/

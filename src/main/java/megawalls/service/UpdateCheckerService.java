@@ -115,12 +115,12 @@ final class UpdateCheckerService {
 
     private void notifyUpdateAvailable(ReleaseInfo releaseInfo) {
         ChatNotifier.info(
-            "qol " +
+            "A new version of qol is available: " +
                 releaseInfo.version +
-                " is available. Current: " +
+                " Current: " +
                 MegaWallsMod.VERSION
         );
-        ChatNotifier.link("Open qol releases", releaseInfo.releaseUrl);
+        ChatNotifier.link("Click to open qol releases", releaseInfo.releaseUrl);
     }
 
     private HttpURLConnection openConnection(String url) throws IOException {

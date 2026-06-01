@@ -5,14 +5,17 @@ import megawalls.config.MegaWallsConfig;
 import megawalls.MegaWallsMod;
 import megawalls.domain.DiamondGear;
 import megawalls.render.NametagIconService;
+import megawalls.render.BarrierBlockReplacement;
 import megawalls.render.SnowmanTeamResolver;
 import megawalls.render.TransparentSnowmanRenderer;
+import megawalls.waypoint.MarkerService;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.entity.monster.EntitySnowman;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -54,6 +57,8 @@ public final class MegaWallsService {
     private final TransparentSnowmanRenderer transparentSnowmanRenderer =
             new TransparentSnowmanRenderer();
     private final UpdateCheckerService updateCheckerService = new UpdateCheckerService();
+    private final MarkerService markerService = new MarkerService();
+    private boolean lastVisibleBarriers;
 
     private MegaWallsService() {}
 
@@ -70,8 +75,16 @@ public final class MegaWallsService {
         energyReportService.reportEnergyNow();
     }
 
+    public void pingWaypointNow() {
+        markerService.pingLookedAt(MegaWallsMod.getConfig());
+    }
+
     public boolean isInMegaWalls() {
         return contextService.isInMegaWalls();
+    }
+
+    public boolean isDeathmatchActive() {
+        return contextService.isDeathmatchActive();
     }
 
     public PlayerStateView queryPlayerState(UUID playerId, String profileName) {
@@ -120,7 +133,11 @@ public final class MegaWallsService {
         debugService.onClientTick(minecraft, contextService, classResolver);
 
         MegaWallsConfig config = MegaWallsMod.getConfig();
+        BarrierBlockReplacement.updateFromConfig(config);
+        debugService.logBarrierPerformance(BarrierBlockReplacement.drainPerformanceSnapshot());
         updateCheckerService.onClientTick(minecraft, config);
+        markerService.onClientTick(minecraft);
+        refreshBarrierChunksIfNeeded(minecraft, config);
 
         if (!contextService.isInMegaWalls()) {
             if (!contextService.isDeathmatchActive()) {
@@ -160,6 +177,12 @@ public final class MegaWallsService {
         String strippedMessage = event == null || event.message == null
                 ? ""
                 : event.message.getUnformattedTextForChat();
+
+        if (markerService.onChat(formattedMessage, strippedMessage, MegaWallsMod.getConfig(), debugService)) {
+            event.setCanceled(true);
+            return;
+        }
+
         debugService.logChat(formattedMessage, strippedMessage);
 
         if (!contextService.isInMegaWalls()) {
@@ -174,16 +197,63 @@ public final class MegaWallsService {
     }
 
     @SubscribeEvent
+    public void onRenderWorldLast(RenderWorldLastEvent event) {
+        markerService.onRenderWorld(event, MegaWallsMod.getConfig());
+    }
+
+    private void refreshBarrierChunksIfNeeded(Minecraft minecraft, MegaWallsConfig config) {
+        if (
+                minecraft == null ||
+                minecraft.thePlayer == null ||
+                minecraft.theWorld == null ||
+                minecraft.renderGlobal == null ||
+                config == null
+        ) {
+            return;
+        }
+
+        if (
+                config.visibleBarriers == lastVisibleBarriers
+        ) {
+            return;
+        }
+
+        lastVisibleBarriers = config.visibleBarriers;
+
+        int radius = Math.max(2, minecraft.gameSettings.renderDistanceChunks) * 16 + 16;
+        int playerX = (int) Math.floor(minecraft.thePlayer.posX);
+        int playerZ = (int) Math.floor(minecraft.thePlayer.posZ);
+        long startedAt = System.nanoTime();
+        minecraft.renderGlobal.markBlockRangeForRenderUpdate(
+                playerX - radius,
+                0,
+                playerZ - radius,
+                playerX + radius,
+                255,
+                playerZ + radius
+        );
+        debugService.logBarrierChunkRefresh(
+                config.visibleBarriers,
+                radius,
+                playerX,
+                playerZ,
+                System.nanoTime() - startedAt
+        );
+    }
+
+    @SubscribeEvent
     public void onRenderOverlay(RenderGameOverlayEvent.Text event) {
         if (
                 event == null ||
-                !contextService.isInMegaWalls() ||
-                !contextService.isTrackingActive()
+                Minecraft.getMinecraft() == null ||
+                Minecraft.getMinecraft().thePlayer == null ||
+                Minecraft.getMinecraft().theWorld == null
         ) {
             return;
         }
 
         MegaWallsConfig config = MegaWallsMod.getConfig();
+
         if (
                 config == null ||
                 !config.mobilityAlertEnabled ||
