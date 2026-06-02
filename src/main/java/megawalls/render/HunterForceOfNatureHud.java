@@ -41,6 +41,7 @@ public final class HunterForceOfNatureHud extends BasicHud {
         if (
             minecraft == null ||
             config == null ||
+            minecraft.currentScreen != null ||
             !config.hunterFonDraggableHud
         ) {
             return;
@@ -100,7 +101,7 @@ public final class HunterForceOfNatureHud extends BasicHud {
 
         Minecraft minecraft = MinecraftClient.forHud();
         if (minecraft != null) {
-            return minecraft.fontRendererObj.getStringWidth(text);
+            return TextRenderer.getStringWidth(text);
         }
 
         return text.length() * 6.0F;
