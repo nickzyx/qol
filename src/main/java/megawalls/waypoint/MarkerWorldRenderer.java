@@ -13,11 +13,20 @@ import org.lwjgl.opengl.GL11;
 
 public final class MarkerWorldRenderer {
 
+    private static final int HIDE_MARKER_DISTANCE_METERS = 10;
+    private static final int HIDE_MARKER_DISTANCE_SQ =
+        HIDE_MARKER_DISTANCE_METERS * HIDE_MARKER_DISTANCE_METERS;
     private static final float MIN_LABEL_SCALE = 0.026F;
     private static final float MAX_LABEL_SCALE = 0.22F;
     private static final float LABEL_SCALE_PER_BLOCK = 0.00145F;
 
-    public void render(Minecraft minecraft, List<Marker> markers, float partialTicks, int renderRange) {
+    public void render(
+        Minecraft minecraft,
+        List<Marker> markers,
+        float partialTicks,
+        int renderRange,
+        boolean hideNearbyTitles
+    ) {
         if (
             !MinecraftClient.hasWorld(minecraft) ||
             markers == null ||
@@ -32,6 +41,7 @@ public final class MarkerWorldRenderer {
         double playerZ = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * partialTicks;
         int maxRangeSq = renderRange * renderRange;
 
+        GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GlStateManager.pushMatrix();
         try {
             GlStateManager.disableTexture2D();
@@ -58,7 +68,19 @@ public final class MarkerWorldRenderer {
                 if (dx * dx + dy * dy + dz * dz > maxRangeSq) {
                     continue;
                 }
-                renderMarker(minecraft, marker, dx, dy, dz, playerX, playerY, playerZ);
+                if (shouldHideMarker(dx, dz, hideNearbyTitles)) {
+                    continue;
+                }
+                renderMarker(
+                    minecraft,
+                    marker,
+                    dx,
+                    dy,
+                    dz,
+                    playerX,
+                    playerY,
+                    playerZ
+                );
             }
         } finally {
             GL11.glLineWidth(1.0F);
@@ -69,6 +91,7 @@ public final class MarkerWorldRenderer {
             GlStateManager.enableAlpha();
             GlStateManager.enableTexture2D();
             GlStateManager.resetColor();
+            GL11.glMatrixMode(GL11.GL_MODELVIEW);
             GlStateManager.popMatrix();
         }
     }
@@ -88,6 +111,7 @@ public final class MarkerWorldRenderer {
         float green = ((rgb >> 8) & 0xFF) / 255.0F;
         float blue = (rgb & 0xFF) / 255.0F;
 
+        GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GlStateManager.pushMatrix();
         try {
             GlStateManager.translate(dx, dy, dz);
@@ -98,8 +122,13 @@ public final class MarkerWorldRenderer {
             renderStaticColumn();
             renderLabel(minecraft, marker, playerX, playerY, playerZ);
         } finally {
+            GL11.glMatrixMode(GL11.GL_MODELVIEW);
             GlStateManager.popMatrix();
         }
+    }
+
+    private boolean shouldHideMarker(double dx, double dz, boolean hideNearbyTitles) {
+        return hideNearbyTitles && dx * dx + dz * dz <= HIDE_MARKER_DISTANCE_SQ;
     }
 
     private void renderStaticColumn() {
@@ -139,6 +168,7 @@ public final class MarkerWorldRenderer {
         float labelScale = getLabelScale(marker, playerX, playerY, playerZ);
         int width = fontRenderer.getStringWidth(text);
 
+        GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GlStateManager.pushMatrix();
         try {
             GlStateManager.translate(0.0D, 1.65D, 0.0D);
@@ -160,6 +190,7 @@ public final class MarkerWorldRenderer {
         } finally {
             GlStateManager.disableTexture2D();
             GlStateManager.depthMask(false);
+            GL11.glMatrixMode(GL11.GL_MODELVIEW);
             GlStateManager.popMatrix();
         }
     }

@@ -389,6 +389,15 @@ public final class MegaWallsConfig extends Config {
 
     @Switch(
         size = OptionSize.DUAL,
+        name = "Enabled",
+        description = "Render waypoint boxes and beams in the world.",
+        category = "General",
+        subcategory = "Waypoints"
+    )
+    public boolean waypointRenderWorld = true;
+
+    @Switch(
+        size = OptionSize.DUAL,
         name = "Shared Waypoints",
         description = "Share pings with party members. Party members without qol may see these messages.",
         category = "General",
@@ -405,6 +414,15 @@ public final class MegaWallsConfig extends Config {
     )
     public boolean waypointHideSyncMessages = true;
 
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Hide Nearby Waypoints",
+        description = "Hide waypoints when you are within 10 meters of the marker.",
+        category = "General",
+        subcategory = "Waypoints"
+    )
+    public boolean waypointHideNearbyTitles = false;
+
     @Dropdown(
         size = OptionSize.DUAL,
         name = "Message Channel",
@@ -414,15 +432,6 @@ public final class MegaWallsConfig extends Config {
         subcategory = "Waypoints"
     )
     public int waypointPlayerTargetMessageChannel = 0;
-
-    @Switch(
-        size = OptionSize.DUAL,
-        name = "World Markers",
-        description = "Render waypoint boxes and beams in the world.",
-        category = "Render",
-        subcategory = "Waypoints"
-    )
-    public boolean waypointRenderWorld = true;
 
     @Switch(
         size = OptionSize.DUAL,

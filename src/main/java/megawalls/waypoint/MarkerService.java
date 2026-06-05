@@ -109,7 +109,8 @@ public final class MarkerService {
             MinecraftClient.forWorldRender(),
             markers,
             event.partialTicks,
-            WAYPOINT_RANGE
+            WAYPOINT_RANGE,
+            config.waypointHideNearbyTitles
         );
     }
 
