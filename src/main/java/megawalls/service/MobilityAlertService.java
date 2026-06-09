@@ -57,7 +57,7 @@ final class MobilityAlertService {
         if (
             config == null ||
             !config.mobilityAlertEnabled ||
-            !contextService.isInMegaWalls() ||
+            !contextService.isInMegaWallsGame() ||
             !contextService.isTrackingActive() ||
             !MinecraftClient.hasWorld(minecraft)
         ) {

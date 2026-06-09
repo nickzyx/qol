@@ -1,16 +1,22 @@
 package megawalls.service;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import megawalls.MegaWallsMod;
 import megawalls.config.MegaWallsConfig;
 import megawalls.domain.MegaWallsClass;
@@ -30,6 +36,15 @@ import net.minecraftforge.client.event.sound.PlaySoundEvent;
 public final class DeveloperDebugService {
 
     private static final long SNAPSHOT_INTERVAL_MS = 1000L;
+    private static final Pattern SKIN_URL_PATTERN =
+        Pattern.compile("\"url\"\\s*:\\s*\"([^\"]*textures\\.minecraft\\.net/texture/[^\"]+)\"");
+    private static final Pattern PROFILE_NAME_PATTERN =
+        Pattern.compile("\"profileName\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern TEXTURE_HASH_PATTERN =
+        Pattern.compile("/texture/([A-Za-z0-9]+)");
+    private static final Pattern SKIN_PREVIEW_CHAT_PATTERN =
+        Pattern.compile("You are previewing the (.+?) Skin!");
+    private static final int LOBBY_SKIN_PREVIEW_ENTITY_ID = 4;
     private static final SimpleDateFormat FILE_DATE_FORMAT =
         new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT);
     private static final SimpleDateFormat LINE_DATE_FORMAT =
@@ -39,6 +54,9 @@ public final class DeveloperDebugService {
     private File logFile;
     private long nextSnapshotAt;
     private long nextBarrierPerformanceAt;
+    private String lastLobbySkinPreviewKey = "";
+    private String pendingLobbySkinPreviewName = "";
+    private String lastLobbySkinPreviewMapKey = "";
     private boolean wasEnabled;
 
     void onClientTick(
@@ -59,13 +77,16 @@ public final class DeveloperDebugService {
         nextSnapshotAt = now + SNAPSHOT_INTERVAL_MS;
         log(
             "context",
-            "inMegaWalls=" + safeBoolean(contextService.isInMegaWalls()) +
+            "megaWallsLobby=" + safeBoolean(contextService.isInMegaWallsLobby()) +
+                " preGameQueue=" + safeBoolean(contextService.isInPreGameQueue()) +
+                " megaWallsGame=" + safeBoolean(contextService.isInMegaWallsGame()) +
                 " trackingActive=" + safeBoolean(contextService.isTrackingActive()) +
                 " deathmatch=" + safeBoolean(contextService.isDeathmatchActive()) +
                 " localTeamColor=" + printableColor(contextService.getLocalTeamColor())
         );
         logScoreboardSnapshot(minecraft, classResolver);
         logTablistSnapshot(minecraft);
+        logLobbySkinPreviewSnapshot(minecraft, contextService);
         logPlayerSnapshot(minecraft, classResolver);
     }
 
@@ -74,6 +95,7 @@ public final class DeveloperDebugService {
             return;
         }
 
+        rememberLobbySkinPreviewName(strippedMessage);
         log(
             "chat",
             "formatted=\"" + sanitize(formattedMessage) + "\" stripped=\"" +
@@ -444,6 +466,174 @@ public final class DeveloperDebugService {
         }
     }
 
+    private void logLobbySkinPreviewSnapshot(
+        Minecraft minecraft,
+        MegaWallsContextService contextService
+    ) {
+        if (
+            contextService == null ||
+                !contextService.isInMegaWallsLobby() ||
+                !MinecraftClient.hasLoadedWorld(minecraft)
+        ) {
+            return;
+        }
+
+        List<EntityPlayer> players = minecraft.theWorld.playerEntities;
+        if (players == null || players.isEmpty()) {
+            return;
+        }
+
+        for (EntityPlayer player : players) {
+            if (
+                player == null ||
+                    player.getEntityId() != LOBBY_SKIN_PREVIEW_ENTITY_ID ||
+                    player.getGameProfile() == null
+            ) {
+                continue;
+            }
+
+            GameProfile profile = player.getGameProfile();
+            TextureDebugInfo textureDebugInfo = extractTextureDebugInfo(profile);
+            String previewKey = textureDebugInfo.skinHash + ":" + textureDebugInfo.profileName;
+            if (previewKey.equals(lastLobbySkinPreviewKey)) {
+                return;
+            }
+
+            lastLobbySkinPreviewKey = previewKey;
+            log(
+                "skin-preview-hash",
+                "entityId=" + player.getEntityId() +
+                    " hash=" + sanitize(textureDebugInfo.skinHash) +
+                    " decodedProfileName=" + sanitize(textureDebugInfo.profileName) +
+                    " profile=" + sanitize(profile.getName()) +
+                    " pos=" + round(player.posX) + "," + round(player.posY) + "," + round(player.posZ) +
+                    " uuid=" + safe(profile.getId())
+            );
+            logLobbySkinPreviewMap(player, profile, textureDebugInfo);
+            return;
+        }
+
+        lastLobbySkinPreviewKey = "";
+    }
+
+    private void rememberLobbySkinPreviewName(String strippedMessage) {
+        if (strippedMessage == null || strippedMessage.isEmpty()) {
+            return;
+        }
+
+        Matcher matcher = SKIN_PREVIEW_CHAT_PATTERN.matcher(stripFormatting(strippedMessage));
+        if (!matcher.find()) {
+            return;
+        }
+
+        pendingLobbySkinPreviewName = matcher.group(1).trim();
+        log(
+            "skin-preview-pending",
+            "skin=\"" + sanitize(pendingLobbySkinPreviewName) + "\""
+        );
+    }
+
+    private void logLobbySkinPreviewMap(
+        EntityPlayer player,
+        GameProfile profile,
+        TextureDebugInfo textureDebugInfo
+    ) {
+        if (
+            pendingLobbySkinPreviewName.isEmpty() ||
+                textureDebugInfo.skinHash.isEmpty()
+        ) {
+            return;
+        }
+
+        String mapKey = pendingLobbySkinPreviewName + ":" +
+            textureDebugInfo.skinHash + ":" +
+            textureDebugInfo.profileName;
+        if (mapKey.equals(lastLobbySkinPreviewMapKey)) {
+            pendingLobbySkinPreviewName = "";
+            return;
+        }
+
+        lastLobbySkinPreviewMapKey = mapKey;
+        log(
+            "skin-preview-map",
+            "skin=\"" + sanitize(pendingLobbySkinPreviewName) + "\"" +
+                " hash=" + sanitize(textureDebugInfo.skinHash) +
+                " decodedProfileName=" + sanitize(textureDebugInfo.profileName) +
+                " profile=" + sanitize(profile.getName()) +
+                " uuid=" + safe(profile.getId()) +
+                " entityId=" + player.getEntityId() +
+                " pos=" + round(player.posX) + "," + round(player.posY) + "," + round(player.posZ) +
+                " csv=\"" + sanitize(pendingLobbySkinPreviewName) + "," +
+                sanitize(textureDebugInfo.skinHash) + "," +
+                sanitize(textureDebugInfo.profileName) + "\""
+        );
+        pendingLobbySkinPreviewName = "";
+    }
+
+    private TextureDebugInfo extractTextureDebugInfo(GameProfile profile) {
+        TextureDebugInfo debugInfo = new TextureDebugInfo();
+        if (profile == null || profile.getProperties() == null) {
+            return debugInfo;
+        }
+
+        Collection<Property> textures = profile.getProperties().get("textures");
+        if (textures == null || textures.isEmpty()) {
+            return debugInfo;
+        }
+
+        Property textureProperty = textures.iterator().next();
+        if (textureProperty == null || textureProperty.getValue() == null) {
+            return debugInfo;
+        }
+
+        String decoded = decodeBase64(textureProperty.getValue());
+        debugInfo.profileName = extractProfileName(decoded);
+        debugInfo.skinUrl = extractSkinUrl(decoded);
+        debugInfo.skinHash = extractTextureHash(debugInfo.skinUrl);
+        if (debugInfo.skinHash.isEmpty()) {
+            debugInfo.skinHash = extractTextureHash(decoded);
+        }
+        return debugInfo;
+    }
+
+    private String decodeBase64(String value) {
+        try {
+            return new String(
+                Base64.getDecoder().decode(value),
+                StandardCharsets.UTF_8
+            );
+        } catch (IllegalArgumentException ignored) {
+            return "";
+        }
+    }
+
+    private String extractSkinUrl(String decodedTextures) {
+        if (decodedTextures == null || decodedTextures.isEmpty()) {
+            return "";
+        }
+
+        Matcher matcher = SKIN_URL_PATTERN.matcher(decodedTextures);
+        return matcher.find() ? matcher.group(1) : "";
+    }
+
+    private String extractProfileName(String decodedTextures) {
+        if (decodedTextures == null || decodedTextures.isEmpty()) {
+            return "";
+        }
+
+        Matcher matcher = PROFILE_NAME_PATTERN.matcher(decodedTextures);
+        return matcher.find() ? matcher.group(1) : "";
+    }
+
+    private String extractTextureHash(String skinUrl) {
+        if (skinUrl == null || skinUrl.isEmpty()) {
+            return "";
+        }
+
+        Matcher matcher = TEXTURE_HASH_PATTERN.matcher(skinUrl);
+        return matcher.find() ? matcher.group(1) : "";
+    }
+
     private void logPlayerSnapshot(
         Minecraft minecraft,
         MegaWallsClassResolver classResolver
@@ -597,7 +787,24 @@ public final class DeveloperDebugService {
             .replace('\t', ' ');
     }
 
+    private String stripFormatting(String value) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+
+        return value
+            .replaceAll("(?i)§.", "")
+            .replaceAll("�.", "");
+    }
+
     private String round(double value) {
         return String.format(Locale.ROOT, "%.2f", value);
+    }
+
+    private static final class TextureDebugInfo {
+
+        private String profileName = "";
+        private String skinUrl = "";
+        private String skinHash = "";
     }
 }

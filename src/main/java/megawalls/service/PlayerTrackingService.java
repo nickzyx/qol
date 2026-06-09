@@ -195,7 +195,7 @@ final class PlayerTrackingService {
             !config.strengthDetectorEnabled ||
             !canUseStrength(config) ||
             !config.zombieStrength ||
-            !contextService.isInMegaWalls()
+            !contextService.isInMegaWallsGame()
         ) {
             return;
         }

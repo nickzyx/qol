@@ -54,7 +54,7 @@ public final class NametagIconService {
         if (
             !MinecraftClient.hasWorld(minecraft) ||
             config == null ||
-            !contextService.isInMegaWalls() ||
+            !contextService.isInMegaWallsGame() ||
             !contextService.isTrackingActive()
         ) {
             return;

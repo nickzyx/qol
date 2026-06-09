@@ -15,6 +15,7 @@ import cc.polyfrost.oneconfig.config.data.OptionSize;
 import megawalls.MegaWallsMod;
 import megawalls.render.HunterForceOfNatureHud;
 import megawalls.render.MobilityLeapAlertHud;
+import megawalls.render.PregameClassTrackerHud;
 import megawalls.util.ChatNotifier;
 
 public final class MegaWallsConfig extends Config {
@@ -369,6 +370,41 @@ public final class MegaWallsConfig extends Config {
     )
     public boolean hunterFonTextShadow = true;
 
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Enabled",
+        description = "Show class counts for players in the Mega Walls pregame queue.",
+        category = "General",
+        subcategory = "Class Tracker"
+    )
+    public boolean pregameClassTrackerEnabled = false;
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Show Unknown",
+        description = "Show players whose queue skin is not mapped to a class.",
+        category = "General",
+        subcategory = "Class Tracker"
+    )
+    public boolean pregameClassTrackerShowUnknown = true;
+
+    @HUD(
+        name = "Class Tracker HUD",
+        category = "General",
+        subcategory = "Class Tracker"
+    )
+    public PregameClassTrackerHud pregameClassTrackerHud =
+        new PregameClassTrackerHud();
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Text Shadow",
+        description = "Draw the class tracker HUD text with a shadow.",
+        category = "General",
+        subcategory = "Class Tracker"
+    )
+    public boolean pregameClassTrackerTextShadow = true;
+
     @KeyBind(
         size = OptionSize.DUAL,
         name = "Toggle KeyBind",
@@ -677,7 +713,7 @@ public final class MegaWallsConfig extends Config {
     }
 
     private void togglePhoenixTablistDisplay() {
-        if (!MegaWallsMod.isInMegaWalls()) {
+        if (!MegaWallsMod.isInMegaWallsGame()) {
             return;
         }
 
@@ -689,7 +725,7 @@ public final class MegaWallsConfig extends Config {
     }
 
     private void toggleDiamondTablistDisplay() {
-        if (!MegaWallsMod.isInMegaWalls()) {
+        if (!MegaWallsMod.isInMegaWallsGame()) {
             return;
         }
 
@@ -701,7 +737,7 @@ public final class MegaWallsConfig extends Config {
     }
 
     private void togglePotionTablistDisplay() {
-        if (!MegaWallsMod.isInMegaWalls()) {
+        if (!MegaWallsMod.isInMegaWallsGame()) {
             return;
         }
 
@@ -713,7 +749,7 @@ public final class MegaWallsConfig extends Config {
     }
 
     private void toggleMobilityAlert() {
-        if (!MegaWallsMod.isInMegaWalls()) {
+        if (!MegaWallsMod.isInMegaWallsGame()) {
             return;
         }
 
@@ -729,7 +765,7 @@ public final class MegaWallsConfig extends Config {
     }
 
     private void toggleTransparentSnowmen() {
-        if (!MegaWallsMod.isInMegaWalls()) {
+        if (!MegaWallsMod.isInMegaWallsGame()) {
             return;
         }
 

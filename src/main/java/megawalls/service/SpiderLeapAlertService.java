@@ -61,7 +61,7 @@ final class SpiderLeapAlertService {
             config == null ||
             !config.mobilityAlertEnabled ||
             !config.mobilityAlertSpider ||
-            !contextService.isInMegaWalls() ||
+            !contextService.isInMegaWallsGame() ||
             !contextService.isTrackingActive() ||
             minecraft == null ||
             event == null ||

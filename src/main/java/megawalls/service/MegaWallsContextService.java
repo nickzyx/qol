@@ -16,7 +16,9 @@ import java.util.Locale;
 public final class MegaWallsContextService {
 
     private WorldClient trackedWorld;
-    private boolean inMegaWalls;
+    private boolean inMegaWallsLobby;
+    private boolean inPreGameQueue;
+    private boolean inMegaWallsGame;
     private boolean trackingActive;
     private boolean deathmatchActive;
     private char localTeamColor;
@@ -31,21 +33,13 @@ public final class MegaWallsContextService {
         }
 
         trackedWorld = world;
-        inMegaWalls = false;
-        trackingActive = false;
-        deathmatchActive = false;
-        localTeamColor = '\0';
-        clearTeamWitherState();
+        clearContextState();
         return true;
     }
 
     void updateSidebarState(WorldClient world, MegaWallsClassResolver classResolver) {
         if (world == null) {
-            inMegaWalls = false;
-            trackingActive = false;
-            deathmatchActive = false;
-            localTeamColor = '\0';
-            clearTeamWitherState();
+            clearContextState();
             return;
         }
 
@@ -65,19 +59,30 @@ public final class MegaWallsContextService {
         String normalized = classResolver.normalize(sidebarText);
         MegaWallsClass localClass = classResolver.resolveLocalClass();
         boolean megaWallsSidebar = upperSidebarText.contains("MEGA WALLS");
-        boolean gameSidebar = megaWallsSidebar;
-        boolean lobbySidebar = normalized.contains("WINS");
+        boolean lobbySidebar = megaWallsSidebar && isMegaWallsLobbySidebar(normalized);
+        boolean preGameQueueSidebar = megaWallsSidebar && isPreGameQueueSidebar(normalized);
+        boolean gameSidebar = megaWallsSidebar && !lobbySidebar && !preGameQueueSidebar;
         boolean witherSidebar = sidebarText.contains("Wither");
+
         if (lobbySidebar) {
-            inMegaWalls = false;
-            trackingActive = false;
-            deathmatchActive = false;
-            localTeamColor = '\0';
-            clearTeamWitherState();
+            clearContextState();
+            inMegaWallsLobby = true;
             return;
         }
 
-        inMegaWalls = gameSidebar || localClass != null;
+        if (preGameQueueSidebar) {
+            clearContextState();
+            inPreGameQueue = true;
+            return;
+        }
+
+        inMegaWallsLobby = false;
+        inPreGameQueue = false;
+        inMegaWallsGame = gameSidebar || localClass != null;
+        trackingActive = false;
+        deathmatchActive = false;
+        localTeamColor = '\0';
+        clearTeamWitherState();
         if (gameSidebar) {
             trackingActive = true;
             localTeamColor = getLastColorCode(formattedSidebarTitle);
@@ -86,8 +91,16 @@ public final class MegaWallsContextService {
         }
     }
 
-    public boolean isInMegaWalls() {
-        return inMegaWalls;
+    public boolean isInMegaWallsLobby() {
+        return inMegaWallsLobby;
+    }
+
+    public boolean isInPreGameQueue() {
+        return inPreGameQueue;
+    }
+
+    public boolean isInMegaWallsGame() {
+        return inMegaWallsGame;
     }
 
     public boolean isDeathmatchActive() {
@@ -119,6 +132,24 @@ public final class MegaWallsContextService {
 
     void observeChatMessage(String message, MegaWallsClassResolver classResolver) {
         // Deathmatch is inferred from the active sidebar instead.
+    }
+
+    private boolean isMegaWallsLobbySidebar(String normalizedSidebarText) {
+        return normalizedSidebarText.contains("WINS");
+    }
+
+    private boolean isPreGameQueueSidebar(String normalizedSidebarText) {
+        return normalizedSidebarText.contains("MAP");
+    }
+
+    private void clearContextState() {
+        inMegaWallsLobby = false;
+        inPreGameQueue = false;
+        inMegaWallsGame = false;
+        trackingActive = false;
+        deathmatchActive = false;
+        localTeamColor = '\0';
+        clearTeamWitherState();
     }
 
     private List<String> getSidebarLines(Scoreboard scoreboard) {

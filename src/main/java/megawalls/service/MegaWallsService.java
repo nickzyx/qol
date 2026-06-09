@@ -61,6 +61,8 @@ public final class MegaWallsService {
     private final MarkerService markerService = new MarkerService();
     private final HunterForceOfNatureService hunterForceOfNatureService =
             new HunterForceOfNatureService();
+    private final PregameClassTrackerService pregameClassTrackerService =
+            new PregameClassTrackerService();
     private boolean lastVisibleBarriers;
 
     private MegaWallsService() {}
@@ -68,7 +70,7 @@ public final class MegaWallsService {
     public void reportEnergyNow() {
         MegaWallsConfig config = MegaWallsMod.getConfig();
         if (
-                !contextService.isInMegaWalls() ||
+                !contextService.isInMegaWallsGame() ||
                 !contextService.isTrackingActive() ||
                 config == null
         ) {
@@ -82,8 +84,8 @@ public final class MegaWallsService {
         markerService.pingLookedAt(MegaWallsMod.getConfig());
     }
 
-    public boolean isInMegaWalls() {
-        return contextService.isInMegaWalls();
+    public boolean isInMegaWallsGame() {
+        return contextService.isInMegaWallsGame();
     }
 
     public boolean isDeathmatchActive() {
@@ -91,7 +93,7 @@ public final class MegaWallsService {
     }
 
     public PlayerStateView queryPlayerState(UUID playerId, String profileName) {
-        if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
+        if (!contextService.isInMegaWallsGame() || !contextService.isTrackingActive()) {
             return inactivePlayerState(playerId, profileName);
         }
 
@@ -99,7 +101,7 @@ public final class MegaWallsService {
     }
 
     public PlayerStateView queryPlayerState(UUID playerId, String profileName, String renderedName) {
-        if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
+        if (!contextService.isInMegaWallsGame() || !contextService.isTrackingActive()) {
             return inactivePlayerState(playerId, profileName);
         }
 
@@ -107,7 +109,7 @@ public final class MegaWallsService {
     }
 
     public PlayerStateView queryNametagPlayerState(UUID playerId, String profileName, String renderedName) {
-        if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
+        if (!contextService.isInMegaWallsGame() || !contextService.isTrackingActive()) {
             return inactivePlayerState(playerId, profileName);
         }
 
@@ -140,14 +142,27 @@ public final class MegaWallsService {
         debugService.logBarrierPerformance(BarrierBlockReplacement.drainPerformanceSnapshot());
         updateCheckerService.onClientTick(minecraft, config);
         markerService.onClientTick(minecraft);
+        pregameClassTrackerService.onClientTick(
+                minecraft,
+                config,
+                contextService
+        );
+        if (config != null && config.pregameClassTrackerHud != null) {
+            config.pregameClassTrackerHud.setQueueActive(
+                    contextService.isInPreGameQueue()
+            );
+        }
         refreshBarrierChunksIfNeeded(minecraft, config);
 
-        if (!contextService.isInMegaWalls()) {
+        if (!contextService.isInMegaWallsGame()) {
             if (!contextService.isDeathmatchActive()) {
                 playerTrackingService.resetSnapshots();
             }
             mobilityAlertService.reset();
             nametagIconService.reset(minecraft);
+            if (!contextService.isInPreGameQueue()) {
+                pregameClassTrackerService.reset();
+            }
             return;
         }
 
@@ -194,7 +209,7 @@ public final class MegaWallsService {
 
         debugService.logChat(formattedMessage, strippedMessage);
 
-        if (!contextService.isInMegaWalls()) {
+        if (!contextService.isInMegaWallsGame()) {
             return;
         }
 
@@ -260,6 +275,11 @@ public final class MegaWallsService {
 
         MegaWallsConfig config = MegaWallsMod.getConfig();
         hunterForceOfNatureService.onRenderOverlay(event, config);
+        if (config != null && config.pregameClassTrackerHud != null) {
+            config.pregameClassTrackerHud.setQueueActive(
+                    contextService.isInPreGameQueue()
+            );
+        }
 
         if (
                 config == null ||
@@ -283,6 +303,39 @@ public final class MegaWallsService {
     }
 
     @SubscribeEvent
+    public void onRenderOverlayPost(RenderGameOverlayEvent.Post event) {
+        if (
+                event == null ||
+                event.type != RenderGameOverlayEvent.ElementType.ALL
+        ) {
+            return;
+        }
+
+        Minecraft minecraft = MinecraftClient.withWorld();
+        if (minecraft == null) {
+            return;
+        }
+
+        MegaWallsConfig config = MegaWallsMod.getConfig();
+        if (config == null || config.pregameClassTrackerHud == null) {
+            return;
+        }
+
+        config.pregameClassTrackerHud.setQueueActive(
+                contextService.isInPreGameQueue()
+        );
+        if (!contextService.isInPreGameQueue()) {
+            return;
+        }
+
+        config.pregameClassTrackerHud.renderActive(
+                minecraft,
+                config,
+                pregameClassTrackerService.getLatestCounts()
+        );
+    }
+
+    @SubscribeEvent
     public void onRenderLivingPre(RenderLivingEvent.Pre event) {
         if (event == null) {
             return;
@@ -296,7 +349,7 @@ public final class MegaWallsService {
         if (
                 config == null ||
                 !config.transparentSnowmen ||
-                !contextService.isInMegaWalls() ||
+                !contextService.isInMegaWallsGame() ||
                 !contextService.isTrackingActive() ||
                 (
                         !config.transparentSnowmenAllTeams &&
@@ -322,7 +375,7 @@ public final class MegaWallsService {
         debugService.logSound(event);
         mobilityAlertService.onPlaySound(event);
 
-        if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
+        if (!contextService.isInMegaWallsGame() || !contextService.isTrackingActive()) {
             return;
         }
 
@@ -334,7 +387,7 @@ public final class MegaWallsService {
         if (
                 event == null ||
                 event.action != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK ||
-                !contextService.isInMegaWalls() ||
+                !contextService.isInMegaWallsGame() ||
                 !contextService.isTrackingActive()
         ) {
             return;
@@ -345,7 +398,7 @@ public final class MegaWallsService {
 
     public void observeTabProfile(UUID playerId, String profileName, String renderedName) {
         debugService.logTabProfilePacket(playerId, profileName, renderedName);
-        if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
+        if (!contextService.isInMegaWallsGame() || !contextService.isTrackingActive()) {
             return;
         }
 
@@ -354,7 +407,7 @@ public final class MegaWallsService {
 
     public void observeEntityMetadata(int entityId, float health) {
         debugService.logEntityMetadataPacket(entityId, health);
-        if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
+        if (!contextService.isInMegaWallsGame() || !contextService.isTrackingActive()) {
             return;
         }
 
@@ -363,7 +416,7 @@ public final class MegaWallsService {
 
     public void observeEquipmentPacket(int entityId, int equipmentSlot, ItemStack itemStack) {
         debugService.logEquipmentPacket(entityId, equipmentSlot, itemStack);
-        if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
+        if (!contextService.isInMegaWallsGame() || !contextService.isTrackingActive()) {
             return;
         }
 
@@ -372,7 +425,7 @@ public final class MegaWallsService {
 
     public void observeEntityEffect(int entityId, int effectId, int durationTicks) {
         debugService.logEntityEffectPacket(entityId, effectId, durationTicks);
-        if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
+        if (!contextService.isInMegaWallsGame() || !contextService.isTrackingActive()) {
             return;
         }
 
@@ -381,7 +434,7 @@ public final class MegaWallsService {
 
     public void observeEntityEffectRemoved(int entityId, int effectId) {
         debugService.logEntityEffectRemovedPacket(entityId, effectId);
-        if (!contextService.isInMegaWalls() || !contextService.isTrackingActive()) {
+        if (!contextService.isInMegaWallsGame() || !contextService.isTrackingActive()) {
             return;
         }
 
