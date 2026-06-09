@@ -158,12 +158,14 @@ public final class PregameClassTrackerHud extends BasicHud {
 
         for (ClassCount classCount : sortedClassCounts(counts.getClassCounts())) {
             builtLines.add(
-                classCount.megaWallsClass.getDisplayName() + " " + classCount.count
+                classCount.megaWallsClass.getDisplayName() +
+                    " \u00a7a" +
+                    classCount.count
             );
         }
 
         if (config.pregameClassTrackerShowUnknown && counts.getUnknownPlayers() > 0) {
-            builtLines.add("Unknown " + counts.getUnknownPlayers());
+            builtLines.add("Unknown \u00a7a" + counts.getUnknownPlayers());
         }
 
         return builtLines.toArray(new String[builtLines.size()]);

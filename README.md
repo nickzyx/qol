@@ -32,6 +32,8 @@ Download the latest qol release jar from [Releases](https://github.com/nickzyx/q
 - [Potion Tracker](#potion-tracker)
 - [Spider Leap Alert](#spider-leap-alert)
 
+---
+
 ### Energy Announcer
 
 Sends your current ability energy as a chat message with an in-game keybind.
@@ -74,7 +76,11 @@ Place shared party waypoints by looking at a block or player and pressing the pi
 
 ### Class Tracker
 
-Counts player classes in the Mega Walls pregame queue from class skin hashes and shows the totals in a movable text HUD.
+Counts classes in the Mega Walls queue and shows the totals in a movable text HUD.
+
+<p align="center">
+  <img alt="Class Tracker queue counter example" src="examples/queue_counter_example.png">
+</p>
 
 ### Mobility Alert
 
