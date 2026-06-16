@@ -61,6 +61,8 @@ public final class MegaWallsService {
     private final MarkerService markerService = new MarkerService();
     private final HunterForceOfNatureService hunterForceOfNatureService =
             new HunterForceOfNatureService();
+    private final InactiveGatheringActionbarService inactiveGatheringActionbarService =
+            new InactiveGatheringActionbarService();
     private final PregameClassTrackerService pregameClassTrackerService =
             new PregameClassTrackerService();
     private boolean lastVisibleBarriers;
@@ -196,6 +198,16 @@ public final class MegaWallsService {
                 ? ""
                 : event.message.getUnformattedTextForChat();
         MegaWallsConfig config = MegaWallsMod.getConfig();
+
+        inactiveGatheringActionbarService.filterActionbar(
+                event,
+                config,
+                classResolver,
+                contextService
+        );
+        if (event != null && event.isCanceled()) {
+            return;
+        }
 
         if (hunterForceOfNatureService.onChatReceived(event, config)) {
             event.setCanceled(true);

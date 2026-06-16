@@ -49,6 +49,15 @@ public final class MegaWallsConfig extends Config {
 
     @Switch(
         size = OptionSize.DUAL,
+        name = "Hide Action Bar Gathering",
+        description = "Hide inactive Gathering action bar text for Enderman and Snowman in deathmatch, and Phoenix, Pigman, Shark, and Squid after walls fall.",
+        category = "General",
+        subcategory = "Action Bar"
+    )
+    public boolean hideActionBarGathering = true;
+
+    @Switch(
+        size = OptionSize.DUAL,
         name = "Visible Barriers",
         description = "Render barrier blocks as glass.",
         category = "Render",
