@@ -14,7 +14,6 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -89,18 +88,42 @@ public final class PregameClassTrackerHud extends BasicHud {
 
         this.lines = buildLines(config, counts);
         this.latestCounts = counts == null ? PregameClassCounts.empty() : counts;
-        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
         GlStateManager.pushMatrix();
         try {
-            GlStateManager.enableBlend();
-            GlStateManager.enableTexture2D();
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            resetOverlayState();
             drawAll(new UMatrixStack(), false);
         } finally {
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            restoreOverlayState();
             GlStateManager.popMatrix();
-            GL11.glPopAttrib();
         }
+    }
+
+    private void resetOverlayState() {
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableLighting();
+        GlStateManager.disableDepth();
+        GlStateManager.depthMask(false);
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
+    private void restoreOverlayState() {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.enableTexture2D();
+        GlStateManager.enableDepth();
+        GlStateManager.depthMask(true);
+        GlStateManager.disableBlend();
+    }
+
+    private void resetIconState() {
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableLighting();
+        GlStateManager.disableDepth();
+        GlStateManager.depthMask(false);
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     @Override
@@ -239,9 +262,9 @@ public final class PregameClassTrackerHud extends BasicHud {
         minecraft.getTextureManager().bindTexture(icon);
         GlStateManager.pushMatrix();
         try {
+            resetIconState();
             GlStateManager.translate(x, y, 0.0F);
             GlStateManager.scale(scale, scale, 1.0F);
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             Gui.drawModalRectWithCustomSizedTexture(
                 0,
                 0,

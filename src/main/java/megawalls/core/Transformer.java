@@ -10,6 +10,7 @@ import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.MethodInsnNode;
@@ -19,7 +20,9 @@ import org.objectweb.asm.tree.VarInsnNode;
 public class Transformer implements IClassTransformer, Opcodes {
 
     private static final String GUI_PLAYER_TAB_OVERLAY_CLASS = "net.minecraft.client.gui.GuiPlayerTabOverlay";
+    private static final String GUI_INGAME_CLASS = "net.minecraft.client.gui.GuiIngame";
     private static final String TABLIST_RENDERER_CLASS = "megawalls/render/TablistRenderer";
+    private static final String COMPACT_SIDEBAR_RENDERER_CLASS = "megawalls/render/CompactSidebarRenderer";
     private static final String BLOCK_STATE_MAPPER_CLASS = "net.minecraft.client.renderer.block.statemap.BlockStateMapper";
     private static final String BLOCK_BARRIER_CLASS = "net.minecraft.block.BlockBarrier";
     private static final String BARRIER_BLOCK_REPLACEMENT_CLASS = "megawalls/render/BarrierBlockReplacement";
@@ -35,6 +38,10 @@ public class Transformer implements IClassTransformer, Opcodes {
 
         if (GUI_PLAYER_TAB_OVERLAY_CLASS.equals(transformedName)) {
             return transformGuiPlayerTabOverlay(transformedName, basicClass);
+        }
+
+        if (GUI_INGAME_CLASS.equals(transformedName)) {
+            return transformGuiIngame(transformedName, basicClass);
         }
 
         if (BLOCK_STATE_MAPPER_CLASS.equals(transformedName)) {
@@ -54,6 +61,52 @@ public class Transformer implements IClassTransformer, Opcodes {
         }
 
         return basicClass;
+    }
+
+    private static byte[] transformGuiIngame(String transformedName, byte[] basicClass) {
+        try {
+            String scoreObjective = internalName("auk", "net/minecraft/scoreboard/ScoreObjective");
+            String scaledResolution = internalName("avr", "net/minecraft/client/gui/ScaledResolution");
+            String renderScoreboardName = name("a", "renderScoreboard");
+            String renderScoreboardDesc = "(L" + scoreObjective + ";L" + scaledResolution + ";)V";
+
+            ClassNode classNode = readClass(basicClass);
+
+            boolean patchedSidebar = false;
+            for (MethodNode methodNode : classNode.methods) {
+                if (
+                        isNamedMethod(methodNode, renderScoreboardDesc, renderScoreboardName, "func_180475_a", "a")
+                ) {
+                    LabelNode vanillaRender = new LabelNode();
+                    InsnList hook = new InsnList();
+                    hook.add(new VarInsnNode(ALOAD, 1));
+                    hook.add(new VarInsnNode(ALOAD, 2));
+                    hook.add(new MethodInsnNode(
+                            INVOKESTATIC,
+                            COMPACT_SIDEBAR_RENDERER_CLASS,
+                            "renderCompactSidebar",
+                            renderScoreboardDesc.substring(0, renderScoreboardDesc.length() - 1) + "Z",
+                            false
+                    ));
+                    hook.add(new JumpInsnNode(IFEQ, vanillaRender));
+                    hook.add(new InsnNode(RETURN));
+                    hook.add(vanillaRender);
+                    methodNode.instructions.insert(hook);
+                    patchedSidebar = true;
+                }
+            }
+
+            if (!patchedSidebar) {
+                CorePlugin.LOGGER.error("Failed to patch GuiIngame#renderScoreboard for compact sidebar");
+                return basicClass;
+            }
+
+            CorePlugin.LOGGER.info("Patched GuiIngame for compact sidebar");
+            return writeClass(classNode);
+        } catch (Throwable throwable) {
+            CorePlugin.LOGGER.error("Failed to transform " + transformedName, throwable);
+            return basicClass;
+        }
     }
 
     private static byte[] transformRenderGlobal(String transformedName, byte[] basicClass) {
@@ -531,6 +584,15 @@ public class Transformer implements IClassTransformer, Opcodes {
         return current;
     }
 
+    private static AbstractInsnNode previousMeaningful(AbstractInsnNode insnNode) {
+        AbstractInsnNode current = insnNode == null ? null : insnNode.getPrevious();
+        while (current != null && isStructuralNode(current)) {
+            current = current.getPrevious();
+        }
+
+        return current;
+    }
+
     private static VarInsnNode findPreviousVarLoad(AbstractInsnNode insnNode, int variableIndex, int maxMeaningfulDistance) {
         int meaningfulDistance = 0;
         AbstractInsnNode current = insnNode == null ? null : insnNode.getPrevious();
@@ -592,6 +654,20 @@ public class Transformer implements IClassTransformer, Opcodes {
         return owner.equals(methodInsnNode.owner) &&
                 methodName.equals(methodInsnNode.name) &&
                 methodDesc.equals(methodInsnNode.desc);
+    }
+
+    private static boolean isNamedMethod(MethodNode methodNode, String methodDesc, String... methodNames) {
+        if (methodNode == null || !methodDesc.equals(methodNode.desc)) {
+            return false;
+        }
+
+        for (String methodName : methodNames) {
+            if (methodName.equals(methodNode.name)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static boolean isStructuralNode(AbstractInsnNode insnNode) {

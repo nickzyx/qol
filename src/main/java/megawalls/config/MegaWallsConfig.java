@@ -13,6 +13,7 @@ import cc.polyfrost.oneconfig.config.data.Mod;
 import cc.polyfrost.oneconfig.config.data.ModType;
 import cc.polyfrost.oneconfig.config.data.OptionSize;
 import megawalls.MegaWallsMod;
+import megawalls.render.CompactSidebarHud;
 import megawalls.render.HunterForceOfNatureHud;
 import megawalls.render.MobilityLeapAlertHud;
 import megawalls.render.PregameClassTrackerHud;
@@ -55,6 +56,31 @@ public final class MegaWallsConfig extends Config {
         subcategory = "Action Bar"
     )
     public boolean hideActionBarGathering = true;
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Compact Sidebar",
+        description = "Hide less useful Mega Walls sidebar lines without changing the real scoreboard.",
+        category = "General",
+        subcategory = "Sidebar"
+    )
+    public boolean compactSidebar = false;
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Original Background",
+        description = "Draw the vanilla-style row background behind compact sidebar text.",
+        category = "General",
+        subcategory = "Sidebar"
+    )
+    public boolean compactSidebarOriginalBackground = false;
+
+    @HUD(
+        name = "Compact Sidebar HUD",
+        category = "General",
+        subcategory = "Sidebar"
+    )
+    public CompactSidebarHud compactSidebarHud = new CompactSidebarHud();
 
     @Switch(
         size = OptionSize.DUAL,

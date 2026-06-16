@@ -9,6 +9,8 @@ import megawalls.MegaWallsMod;
 import megawalls.config.MegaWallsConfig;
 import megawalls.util.MinecraftClient;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
+import org.lwjgl.opengl.GL11;
 
 public final class MobilityLeapAlertHud extends BasicHud {
 
@@ -61,7 +63,20 @@ public final class MobilityLeapAlertHud extends BasicHud {
             return;
         }
 
-        drawAll(new UMatrixStack(), false);
+        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+        GlStateManager.pushMatrix();
+        try {
+            GlStateManager.enableBlend();
+            GlStateManager.enableTexture2D();
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            drawAll(new UMatrixStack(), false);
+        } finally {
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            GlStateManager.enableTexture2D();
+            GlStateManager.disableBlend();
+            GlStateManager.popMatrix();
+            GL11.glPopAttrib();
+        }
     }
 
     @Override

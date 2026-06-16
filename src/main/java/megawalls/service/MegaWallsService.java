@@ -86,8 +86,26 @@ public final class MegaWallsService {
         markerService.pingLookedAt(MegaWallsMod.getConfig());
     }
 
+    public void logCompactSidebar(
+            String formattedLine,
+            String strippedLine,
+            boolean hidden,
+            String rewrittenLine
+    ) {
+        debugService.logCompactSidebar(
+                formattedLine,
+                strippedLine,
+                hidden,
+                rewrittenLine
+        );
+    }
+
     public boolean isInMegaWallsGame() {
         return contextService.isInMegaWallsGame();
+    }
+
+    public boolean isInPreGameQueue() {
+        return contextService.isInPreGameQueue();
     }
 
     public boolean isDeathmatchActive() {

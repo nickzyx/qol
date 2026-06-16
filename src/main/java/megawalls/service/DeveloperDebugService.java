@@ -112,6 +112,25 @@ public final class DeveloperDebugService {
         log("waypoint", message);
     }
 
+    public void logCompactSidebar(
+        String formattedLine,
+        String strippedLine,
+        boolean hidden,
+        String rewrittenLine
+    ) {
+        if (!isEnabled()) {
+            return;
+        }
+
+        log(
+            "compact-sidebar",
+            "hidden=" + hidden +
+                " formatted=\"" + sanitize(formattedLine) + "\"" +
+                " stripped=\"" + sanitize(strippedLine) + "\"" +
+                " rewritten=\"" + sanitize(rewrittenLine) + "\""
+        );
+    }
+
     void logBarrierPerformance(BarrierPerformanceSnapshot snapshot) {
         if (!isEnabled() || snapshot == null || snapshot.isEmpty()) {
             return;
