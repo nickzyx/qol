@@ -20,6 +20,7 @@ public final class MegaWallsContextService {
     private boolean inPreGameQueue;
     private boolean inMegaWallsGame;
     private boolean trackingActive;
+    private boolean wallsFallenActive;
     private boolean deathmatchActive;
     private char localTeamColor;
     private boolean redWitherDead;
@@ -63,6 +64,8 @@ public final class MegaWallsContextService {
         boolean preGameQueueSidebar = megaWallsSidebar && isPreGameQueueSidebar(normalized);
         boolean gameSidebar = megaWallsSidebar && !lobbySidebar && !preGameQueueSidebar;
         boolean witherSidebar = sidebarText.contains("Wither");
+        boolean preWallsSidebar = upperSidebarText.contains("WALLS FALL") ||
+            normalized.contains("WALLSFALL");
 
         if (lobbySidebar) {
             clearContextState();
@@ -80,13 +83,15 @@ public final class MegaWallsContextService {
         inPreGameQueue = false;
         inMegaWallsGame = gameSidebar || localClass != null;
         trackingActive = false;
+        wallsFallenActive = false;
         deathmatchActive = false;
         localTeamColor = '\0';
         clearTeamWitherState();
         if (gameSidebar) {
             trackingActive = true;
+            wallsFallenActive = !preWallsSidebar;
             localTeamColor = getLastColorCode(formattedSidebarTitle);
-            deathmatchActive = !witherSidebar;
+            deathmatchActive = !witherSidebar && !preWallsSidebar;
             updateTeamWitherState(sidebarLines, classResolver);
         }
     }
@@ -105,6 +110,10 @@ public final class MegaWallsContextService {
 
     public boolean isDeathmatchActive() {
         return deathmatchActive;
+    }
+
+    public boolean isWallsFallenActive() {
+        return wallsFallenActive;
     }
 
     public boolean isTrackingActive() {
@@ -147,6 +156,7 @@ public final class MegaWallsContextService {
         inPreGameQueue = false;
         inMegaWallsGame = false;
         trackingActive = false;
+        wallsFallenActive = false;
         deathmatchActive = false;
         localTeamColor = '\0';
         clearTeamWitherState();

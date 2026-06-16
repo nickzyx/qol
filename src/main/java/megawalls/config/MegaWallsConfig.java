@@ -50,7 +50,7 @@ public final class MegaWallsConfig extends Config {
     @Switch(
         size = OptionSize.DUAL,
         name = "Hide Action Bar Gathering",
-        description = "Hide inactive Gathering action bar text for Enderman and Snowman in deathmatch, and Phoenix, Pigman, Shark, and Squid after walls fall.",
+        description = "Hide Gathering text from action bar when inactive.",
         category = "General",
         subcategory = "Action Bar"
     )
@@ -396,6 +396,15 @@ public final class MegaWallsConfig extends Config {
         subcategory = "Class Tracker"
     )
     public boolean pregameClassTrackerShowUnknown = true;
+
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Compact Icons",
+        description = "Replace class names with skin face icons.",
+        category = "General",
+        subcategory = "Class Tracker"
+    )
+    public boolean pregameClassTrackerClassIcons = false;
 
     @HUD(
         name = "Class Tracker HUD",

@@ -81,6 +81,7 @@ public final class DeveloperDebugService {
                 " preGameQueue=" + safeBoolean(contextService.isInPreGameQueue()) +
                 " megaWallsGame=" + safeBoolean(contextService.isInMegaWallsGame()) +
                 " trackingActive=" + safeBoolean(contextService.isTrackingActive()) +
+                " wallsFallen=" + safeBoolean(contextService.isWallsFallenActive()) +
                 " deathmatch=" + safeBoolean(contextService.isDeathmatchActive()) +
                 " localTeamColor=" + printableColor(contextService.getLocalTeamColor())
         );

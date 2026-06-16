@@ -76,7 +76,7 @@ public final class InactiveGatheringActionbarService {
             case PIGMAN:
             case SHARK:
             case SQUID:
-                return true;
+                return contextService.isWallsFallenActive();
             default:
                 return false;
         }

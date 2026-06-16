@@ -24,6 +24,7 @@ Download the latest qol release jar from [Releases](https://github.com/nickzyx/q
 - [Strength Tracker](#strength-tracker)
 - [Waypoints](#waypoints)
 - [Class Tracker](#class-tracker)
+- [Action Bar](#action-bar)
 - [Mobility Alert](#mobility-alert)
 - [Casino](#casino)
 - [Transparent Snowmen](#transparent-snowmen)
@@ -79,8 +80,16 @@ Place shared party waypoints by looking at a block or player and pressing the pi
 Counts classes in the Mega Walls queue and shows the totals in a movable text HUD.
 
 <p align="center">
-  <img alt="Class Tracker queue counter example" src="examples/queue_counter_example.png">
+  <img alt="Class Tracker text queue counter example" src="examples/queue_tracker_example.png">
 </p>
+
+<p align="center">
+  <img alt="Class Tracker compact icon queue counter example" src="examples/queue_tracker_example_2.png">
+</p>
+
+### Action Bar
+
+Hides inactive Gathering text from the action bar for classes whose gathering ability no longer works after walls or in deathmatch.
 
 ### Mobility Alert
 
@@ -152,6 +161,7 @@ Most modules are disabled by default and can be enabled independently in OneConf
 - `Strength Tracker`: Enables strength detection, Zombie strength detection, player outlines, repeated alert behavior, and deathmatch-only mode.
 - `Waypoints`: Configures shared waypoint pings, ping keybind, and message channel.
 - `Class Tracker`: Enables pregame queue class counts, unknown player counts, the movable HUD, and text shadow.
+- `Action Bar`: Hides inactive Gathering text from the action bar.
 - `Mobility Alert`: Enables enemy Spider and Enderman range alerts, chat notifications, chat interval, keybind toggle, and deathmatch-only mode.
 - `Auto Update`: Checks GitHub releases for newer versions and links to the releases page when an update is available.
 
