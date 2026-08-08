@@ -1,0 +1,13 @@
+{
+    "__comment": "Serves as block model for any 6 connections, any 5 connections, and 4 connections in a cross shape (ENSW, DNSU, DEUW, ENSUW, DNSUW, DESUW, DENUW, DENSW, DENSU, DENSUW) - all would have identical block models",
+    "parent": "block/cube",
+    "textures": {
+        "particle": "blocks/barrier_green/barrier",
+        "down": "blocks/barrier_green/barrier-ensw",
+        "east": "blocks/barrier_green/barrier-ensw",
+        "north": "blocks/barrier_green/barrier-ensw",
+        "south": "blocks/barrier_green/barrier-ensw",
+        "up": "blocks/barrier_green/barrier-ensw",
+        "west": "blocks/barrier_green/barrier-ensw"
+    }
+}

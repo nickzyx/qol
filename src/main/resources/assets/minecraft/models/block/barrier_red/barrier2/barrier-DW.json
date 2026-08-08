@@ -1,0 +1,13 @@
+{
+    "__comment": "",
+    "parent": "block/cube",
+    "textures": {
+        "particle": "blocks/barrier_red/barrier",
+        "down": "blocks/barrier_red/barrier-ensw",
+        "east": "blocks/barrier_red/barrier-s",
+        "north": "blocks/barrier_red/barrier-es",
+        "south": "blocks/barrier_red/barrier-sw",
+        "up": "blocks/barrier_red/barrier-w",
+        "west": "blocks/barrier_red/barrier-ensw"
+    }
+}

@@ -262,20 +262,32 @@ public class Transformer implements IClassTransformer, Opcodes {
             String renderTypeMethodName = name("b", "getRenderType");
             String blockLayerMethodName = name("m", "getBlockLayer");
             String shouldSideBeRenderedName = name("a", "shouldSideBeRendered");
+            String createBlockStateName = name("e", "createBlockState");
+            String getActualStateName = name("a", "getActualState");
+            String getMetaFromStateName = name("c", "getMetaFromState");
             String enumWorldBlockLayer = internalName("adf", "net/minecraft/util/EnumWorldBlockLayer");
             String block = internalName("afh", "net/minecraft/block/Block");
+            String blockState = internalName("ama", "net/minecraft/block/state/BlockState");
+            String blockStateInterface = internalName("alz", "net/minecraft/block/state/IBlockState");
             String blockAccess = internalName("adq", "net/minecraft/world/IBlockAccess");
             String blockPos = internalName("cj", "net/minecraft/util/BlockPos");
             String enumFacing = internalName("cq", "net/minecraft/util/EnumFacing");
             String blockLayerMethodDesc = "()L" + enumWorldBlockLayer + ";";
             String shouldSideBeRenderedDesc =
                     "(L" + blockAccess + ";L" + blockPos + ";L" + enumFacing + ";)Z";
+            String createBlockStateDesc = "()L" + blockState + ";";
+            String getActualStateDesc =
+                    "(L" + blockStateInterface + ";L" + blockAccess + ";L" + blockPos + ";)L" + blockStateInterface + ";";
+            String getMetaFromStateDesc = "(L" + blockStateInterface + ";)I";
 
             ClassNode classNode = readClass(basicClass);
 
             boolean patchedRenderType = false;
             boolean patchedBlockLayer = false;
             boolean patchedShouldSideBeRendered = false;
+            boolean patchedCreateBlockState = false;
+            boolean patchedGetActualState = false;
+            boolean patchedGetMetaFromState = false;
             for (MethodNode methodNode : classNode.methods) {
                 if (renderTypeMethodName.equals(methodNode.name) && "()I".equals(methodNode.desc)) {
                     methodNode.instructions.clear();
@@ -306,6 +318,23 @@ public class Transformer implements IClassTransformer, Opcodes {
                             enumFacing
                     );
                     patchedShouldSideBeRendered = true;
+                } else if (createBlockStateName.equals(methodNode.name) && createBlockStateDesc.equals(methodNode.desc)) {
+                    methodNode.instructions.clear();
+                    addBarrierCreateBlockStateInstructions(methodNode.instructions, block, blockState);
+                    patchedCreateBlockState = true;
+                } else if (getActualStateName.equals(methodNode.name) && getActualStateDesc.equals(methodNode.desc)) {
+                    methodNode.instructions.clear();
+                    addBarrierActualStateInstructions(
+                            methodNode.instructions,
+                            blockStateInterface,
+                            blockAccess,
+                            blockPos
+                    );
+                    patchedGetActualState = true;
+                } else if (getMetaFromStateName.equals(methodNode.name) && getMetaFromStateDesc.equals(methodNode.desc)) {
+                    methodNode.instructions.clear();
+                    addBarrierMetaFromStateInstructions(methodNode.instructions, blockStateInterface);
+                    patchedGetMetaFromState = true;
                 }
             }
 
@@ -341,7 +370,58 @@ public class Transformer implements IClassTransformer, Opcodes {
                 patchedShouldSideBeRendered = true;
             }
 
-            if (!patchedRenderType || !patchedBlockLayer || !patchedShouldSideBeRendered) {
+            if (!patchedCreateBlockState) {
+                MethodNode createBlockStateMethod = new MethodNode(
+                        ACC_PROTECTED,
+                        createBlockStateName,
+                        createBlockStateDesc,
+                        null,
+                        null
+                );
+                addBarrierCreateBlockStateInstructions(createBlockStateMethod.instructions, block, blockState);
+                classNode.methods.add(createBlockStateMethod);
+                patchedCreateBlockState = true;
+            }
+
+            if (!patchedGetActualState) {
+                MethodNode actualStateMethod = new MethodNode(
+                        ACC_PUBLIC,
+                        getActualStateName,
+                        getActualStateDesc,
+                        null,
+                        null
+                );
+                addBarrierActualStateInstructions(
+                        actualStateMethod.instructions,
+                        blockStateInterface,
+                        blockAccess,
+                        blockPos
+                );
+                classNode.methods.add(actualStateMethod);
+                patchedGetActualState = true;
+            }
+
+            if (!patchedGetMetaFromState) {
+                MethodNode metaMethod = new MethodNode(
+                        ACC_PUBLIC,
+                        getMetaFromStateName,
+                        getMetaFromStateDesc,
+                        null,
+                        null
+                );
+                addBarrierMetaFromStateInstructions(metaMethod.instructions, blockStateInterface);
+                classNode.methods.add(metaMethod);
+                patchedGetMetaFromState = true;
+            }
+
+            if (
+                    !patchedRenderType ||
+                    !patchedBlockLayer ||
+                    !patchedShouldSideBeRendered ||
+                    !patchedCreateBlockState ||
+                    !patchedGetActualState ||
+                    !patchedGetMetaFromState
+            ) {
                 CorePlugin.LOGGER.error("Failed to patch BlockBarrier for visible barriers");
                 return basicClass;
             }
@@ -394,6 +474,56 @@ public class Transformer implements IClassTransformer, Opcodes {
                 BARRIER_BLOCK_REPLACEMENT_CLASS,
                 "shouldRenderBarrierSide",
                 "(ZL" + blockAccess + ";L" + blockPos + ";L" + enumFacing + ";L" + block + ";)Z",
+                false
+        ));
+        instructions.add(new InsnNode(IRETURN));
+    }
+
+    private static void addBarrierCreateBlockStateInstructions(
+            InsnList instructions,
+            String block,
+            String blockState
+    ) {
+        instructions.add(new VarInsnNode(ALOAD, 0));
+        instructions.add(new MethodInsnNode(
+                INVOKESTATIC,
+                BARRIER_BLOCK_REPLACEMENT_CLASS,
+                "createBarrierBlockState",
+                "(L" + block + ";)L" + blockState + ";",
+                false
+        ));
+        instructions.add(new InsnNode(ARETURN));
+    }
+
+    private static void addBarrierActualStateInstructions(
+            InsnList instructions,
+            String blockStateInterface,
+            String blockAccess,
+            String blockPos
+    ) {
+        instructions.add(new VarInsnNode(ALOAD, 1));
+        instructions.add(new VarInsnNode(ALOAD, 2));
+        instructions.add(new VarInsnNode(ALOAD, 3));
+        instructions.add(new MethodInsnNode(
+                INVOKESTATIC,
+                BARRIER_BLOCK_REPLACEMENT_CLASS,
+                "getBarrierActualState",
+                "(L" + blockStateInterface + ";L" + blockAccess + ";L" + blockPos + ";)L" + blockStateInterface + ";",
+                false
+        ));
+        instructions.add(new InsnNode(ARETURN));
+    }
+
+    private static void addBarrierMetaFromStateInstructions(
+            InsnList instructions,
+            String blockStateInterface
+    ) {
+        instructions.add(new VarInsnNode(ALOAD, 1));
+        instructions.add(new MethodInsnNode(
+                INVOKESTATIC,
+                BARRIER_BLOCK_REPLACEMENT_CLASS,
+                "getBarrierMetaFromState",
+                "(L" + blockStateInterface + ";)I",
                 false
         ));
         instructions.add(new InsnNode(IRETURN));

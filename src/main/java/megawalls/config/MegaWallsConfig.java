@@ -109,6 +109,15 @@ public final class MegaWallsConfig extends Config {
     )
     public int barrierRenderStyle = 0;
 
+    @Switch(
+        size = OptionSize.DUAL,
+        name = "Connected Borders (Restart Required)",
+        description = "Use connected barrier models.",
+        category = "Render",
+        subcategory = "Barriers"
+    )
+    public boolean barrierConnectedBorders = false;
+
     @KeyBind(
         size = OptionSize.DUAL,
         name = "Toggle Tablist Display",
